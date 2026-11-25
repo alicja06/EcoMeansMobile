@@ -24,6 +24,7 @@ interface AuthScreenProps {
 
 export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,12 +32,17 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
   const [message, setMessage] = useState("");
 
   async function handleSubmit() {
-    if (!email.trim() || !password) {
-      setError("Wypełnij adres e-mail i hasło.");
+    if (!email.trim()) {
+      setError("Wpisz adres e-mail.");
       return;
     }
 
-    if (mode === "register" && password.length < 6) {
+    if (!forgotPassword && !password) {
+      setError("Wpisz hasło.");
+      return;
+    }
+
+    if (!forgotPassword && mode === "register" && password.length < 6) {
       setError("Hasło musi mieć co najmniej 6 znaków.");
       return;
     }
@@ -46,10 +52,31 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
     setLoading(true);
 
     try {
+      if (forgotPassword) {
+        const redirectTo = Linking.createURL("auth/callback", {
+          queryParams: { type: "recovery" },
+        });
+
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          email.trim(),
+          { redirectTo },
+        );
+
+        if (error) throw error;
+
+        setMessage(
+          "Jeśli konto jest powiązane z tym adresem, otrzymasz wiadomość z linkiem do ustawienia nowego hasła.",
+        );
+        return;
+      }
+
       if (mode === "register") {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
+          options: {
+            emailRedirectTo: Linking.createURL("auth/callback"),
+          },
         });
 
         if (error) throw error;
@@ -87,6 +114,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
 
     try {
       const redirectTo = Linking.createURL("auth/callback");
+      console.log("[GOOGLE REDIRECT URL]", redirectTo);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -106,6 +134,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
         data.url,
         redirectTo,
       );
+      console.log("[GOOGLE AUTH RESULT]", result);
 
       if (result.type === "cancel" || result.type === "dismiss") {
         return;
@@ -205,45 +234,53 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
               />
 
               <Text style={styles.heading}>
-                {mode === "login" ? "Witaj ponownie!" : "Dołącz do EcoMeans"}
+                {forgotPassword
+                  ? "Odzyskaj dostęp"
+                  : mode === "login"
+                    ? "Witaj ponownie!"
+                    : "Dołącz do EcoMeans"}
               </Text>
 
               <Text style={styles.subtitle}>
-                {mode === "login"
-                  ? "Zaloguj się do swojego domu."
-                  : "Utwórz konto i zadbaj o dom po swojemu."}
+                {forgotPassword
+                  ? "Podaj adres e-mail powiązany z Twoim kontem."
+                  : mode === "login"
+                    ? "Zaloguj się do swojego domu."
+                    : "Utwórz konto i zadbaj o dom po swojemu."}
               </Text>
             </View>
 
-            <View style={styles.tabs}>
-              <Pressable
-                onPress={() => changeMode("login")}
-                style={[styles.tab, mode === "login" && styles.activeTab]}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    mode === "login" && styles.activeTabText,
-                  ]}
+            {!forgotPassword ? (
+              <View style={styles.tabs}>
+                <Pressable
+                  onPress={() => changeMode("login")}
+                  style={[styles.tab, mode === "login" && styles.activeTab]}
                 >
-                  Logowanie
-                </Text>
-              </Pressable>
+                  <Text
+                    style={[
+                      styles.tabText,
+                      mode === "login" && styles.activeTabText,
+                    ]}
+                  >
+                    Logowanie
+                  </Text>
+                </Pressable>
 
-              <Pressable
-                onPress={() => changeMode("register")}
-                style={[styles.tab, mode === "register" && styles.activeTab]}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    mode === "register" && styles.activeTabText,
-                  ]}
+                <Pressable
+                  onPress={() => changeMode("register")}
+                  style={[styles.tab, mode === "register" && styles.activeTab]}
                 >
-                  Rejestracja
-                </Text>
-              </Pressable>
-            </View>
+                  <Text
+                    style={[
+                      styles.tabText,
+                      mode === "register" && styles.activeTabText,
+                    ]}
+                  >
+                    Rejestracja
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
 
             <View style={styles.form}>
               <View style={styles.field}>
@@ -263,25 +300,50 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                 />
               </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Hasło</Text>
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoComplete={
-                    mode === "login" ? "current-password" : "new-password"
-                  }
-                  textContentType={
-                    mode === "login" ? "password" : "newPassword"
-                  }
-                  editable={!loading}
-                  placeholder="Minimum 6 znaków"
-                  placeholderTextColor="#999184"
-                  style={styles.input}
-                />
-              </View>
+              {!forgotPassword ? (
+                <View style={styles.field}>
+                  <Text style={styles.label}>Hasło</Text>
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete={
+                      mode === "login" ? "current-password" : "new-password"
+                    }
+                    textContentType={
+                      mode === "login" ? "password" : "newPassword"
+                    }
+                    editable={!loading}
+                    placeholder="Minimum 6 znaków"
+                    placeholderTextColor="#999184"
+                    style={styles.input}
+                  />
+
+                  {mode === "login" ? (
+                    <Pressable
+                      onPress={() => {
+                        setForgotPassword(true);
+                        setError("");
+                        setMessage("");
+                        setPassword("");
+                      }}
+                      disabled={loading}
+                      style={{ alignSelf: "flex-end", paddingVertical: 4 }}
+                    >
+                      <Text
+                        style={{
+                          color: "#3b742f",
+                          fontSize: 13,
+                          fontFamily: "Sen",
+                        }}
+                      >
+                        Nie pamiętasz hasła?
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
 
               {error ? (
                 <View style={styles.errorBox}>
@@ -307,34 +369,43 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                 <Text style={styles.submitButtonText}>
                   {loading
                     ? "Chwileczkę..."
-                    : mode === "login"
-                      ? "Zaloguj się"
-                      : "Utwórz konto"}
+                    : forgotPassword
+                      ? "Wyślij link do zmiany hasła"
+                      : mode === "login"
+                        ? "Zaloguj się"
+                        : "Utwórz konto"}
                 </Text>
               </Pressable>
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>lub</Text>
-                <View style={styles.dividerLine} />
-              </View>
 
-              <Pressable
-                onPress={handleGoogleSignIn}
-                disabled={loading}
-                style={({ pressed }) => [
-                  styles.googleButton,
-                  pressed && !loading && styles.googleButtonPressed,
-                  loading && styles.disabledButton,
-                ]}
-              >
-                <Image
-                  source={require("../../assets/images/google-g-logo.png")}
-                  style={styles.googleLogo}
-                  resizeMode="contain"
-                  accessibilityLabel="Google"
-                />
-                <Text style={styles.googleButtonText}>Kontynuuj z Google</Text>
-              </Pressable>
+              {!forgotPassword ? (
+                <>
+                  <View style={styles.divider}>
+                    <View style={styles.dividerLine} />
+                    <Text style={styles.dividerText}>lub</Text>
+                    <View style={styles.dividerLine} />
+                  </View>
+
+                  <Pressable
+                    onPress={handleGoogleSignIn}
+                    disabled={loading}
+                    style={({ pressed }) => [
+                      styles.googleButton,
+                      pressed && !loading && styles.googleButtonPressed,
+                      loading && styles.disabledButton,
+                    ]}
+                  >
+                    <Image
+                      source={require("../../assets/images/google-g-logo.png")}
+                      style={styles.googleLogo}
+                      resizeMode="contain"
+                      accessibilityLabel="Google"
+                    />
+                    <Text style={styles.googleButtonText}>
+                      Kontynuuj z Google
+                    </Text>
+                  </Pressable>
+                </>
+              ) : null}
             </View>
           </View>
         </ScrollView>
@@ -352,22 +423,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 28,
-  },
-  container: {
-    width: "100%",
-    maxWidth: 420,
-    alignSelf: "center",
-  },
-  backButton: {
-    alignSelf: "flex-start",
-    marginBottom: 30,
-    paddingVertical: 8,
-  },
+  flexGrow: 1,
+  justifyContent: "center",
+  paddingHorizontal: 22,
+  paddingTop: 8,
+  paddingBottom: 16,
+},
+container: {
+  width: "100%",
+  maxWidth: 420,
+  alignSelf: "center",
+},
+backButton: {
+  alignSelf: "flex-start",
+  marginBottom: 14,
+  paddingVertical: 5,
+},
   backText: {
     color: "#3b742f",
     fontSize: 14,
@@ -375,41 +446,41 @@ const styles = StyleSheet.create({
     fontFamily: "Sen",
   },
   header: {
-    alignItems: "center",
-    marginBottom: 28,
-  },
-  logo: {
-    width: 176,
-    height: 90,
-    marginBottom: 20,
-  },
-  heading: {
-    color: "#3b742f",
-    fontSize: 30,
-    textAlign: "center",
-    marginBottom: 8,
-    fontFamily: "Sen",
-  },
-  subtitle: {
-    color: "#4e4d4d",
-    fontSize: 14,
-    textAlign: "center",
-    fontFamily: "Sen",
-  },
+  alignItems: "center",
+  marginBottom: 18,
+},
+logo: {
+  width: 140,
+  height: 72,
+  marginBottom: 10,
+},
+heading: {
+  color: "#3b742f",
+  fontSize: 27,
+  textAlign: "center",
+  marginBottom: 5,
+  fontFamily: "Sen",
+},
+subtitle: {
+  color: "#4e4d4d",
+  fontSize: 13,
+  textAlign: "center",
+  fontFamily: "Sen",
+},
   tabs: {
-    flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.6)",
-    borderRadius: 16,
-    padding: 4,
-    marginBottom: 20,
-  },
-  tab: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 13,
-    borderRadius: 12,
-  },
+  flexDirection: "row",
+  backgroundColor: "rgba(255,255,255,0.6)",
+  borderRadius: 14,
+  padding: 3,
+  marginBottom: 14,
+},
+tab: {
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
+  paddingVertical: 10,
+  borderRadius: 11,
+},
   activeTab: {
     backgroundColor: "#3b742f",
   },
@@ -422,30 +493,30 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: "#ffffff",
   },
-  form: {
-    backgroundColor: "rgba(255,255,255,0.8)",
-    borderRadius: 24,
-    padding: 22,
-    gap: 18,
-  },
-  field: {
-    gap: 8,
-  },
+form: {
+  backgroundColor: "rgba(255,255,255,0.8)",
+  borderRadius: 22,
+  padding: 16,
+  gap: 12,
+},
+field: {
+  gap: 6,
+},
+input: {
+  backgroundColor: "#ffffff",
+  borderWidth: 1,
+  borderColor: "#d9d0bd",
+  borderRadius: 12,
+  paddingHorizontal: 14,
+  paddingVertical: 11,
+  color: "#4e4d4d",
+  fontSize: 14,
+  fontFamily: "Sen",
+},
   label: {
     color: "#4e4d4d",
     fontSize: 14,
     fontWeight: "600",
-    fontFamily: "Sen",
-  },
-  input: {
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#d9d0bd",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 13,
-    color: "#4e4d4d",
-    fontSize: 15,
     fontFamily: "Sen",
   },
   errorBox: {
@@ -469,13 +540,30 @@ const styles = StyleSheet.create({
     fontFamily: "Sen",
   },
   submitButton: {
-    backgroundColor: "#3b742f",
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  backgroundColor: "#3b742f",
+  borderRadius: 15,
+  paddingHorizontal: 20,
+  paddingVertical: 13,
+  alignItems: "center",
+  justifyContent: "center",
+},
+divider: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 10,
+},
+googleButton: {
+  backgroundColor: "#ffffff",
+  borderWidth: 1,
+  borderColor: "#747775",
+  borderRadius: 15,
+  paddingHorizontal: 20,
+  paddingVertical: 12,
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 10,
+},
   submitButtonPressed: {
     backgroundColor: "#315f27",
     transform: [{ scale: 0.98 }],
@@ -489,11 +577,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "Sen",
   },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
   dividerLine: {
     flex: 1,
     height: 1,
@@ -503,18 +586,6 @@ const styles = StyleSheet.create({
     color: "#999184",
     fontSize: 13,
     fontFamily: "Sen",
-  },
-  googleButton: {
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#747775",
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
   },
   googleButtonPressed: {
     backgroundColor: "#f5f1e9",

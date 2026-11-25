@@ -1,4 +1,15 @@
-﻿import { useEffect, type ReactNode } from 'react';
+﻿
+import { useEffect, type ReactNode } from 'react';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { X } from 'lucide-react-native';
 
 interface SheetProps {
@@ -10,43 +21,135 @@ interface SheetProps {
 
 export function Sheet({ title, onClose, children, footer }: SheetProps) {
   useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
+    // Obsługa zamykania jest realizowana przez Modal
+    // i przycisk powrotu systemu Android.
+  }, []);
 
   return (
-    <div className="absolute inset-0 z-50 flex items-end animate-fade-in">
-      <button
-        type="button"
-        aria-label="Zamknij okno"
-        onClick={onClose}
-        className="absolute inset-0 bg-ink-900/40 backdrop-blur-[2px]"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="relative flex max-h-[88%] w-full flex-col rounded-t-[32px] bg-canvas shadow-lift animate-sheet-up"
-      >
-        <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-ink-300" />
-        <div className="flex items-center justify-between gap-4 px-6 pb-2 pt-4">
-          <h2 className="text-lg font-bold leading-tight text-ink-900">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Zamknij"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-100 text-ink-600 transition hover:bg-ink-200"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        <div className="overflow-y-auto px-6 pb-6 pt-2">{children}</div>
-        {footer && <div className="border-t border-ink-200 bg-white px-6 py-4">{footer}</div>}
-      </div>
-    </div>
+    <Modal
+      visible
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={styles.overlay}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Zamknij okno"
+        />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardContainer}
+        >
+          <View style={styles.sheet}>
+            <View style={styles.handle} />
+
+            <View style={styles.header}>
+              <Text style={styles.title}>{title}</Text>
+
+              <Pressable
+                onPress={onClose}
+                style={({ pressed }) => [
+                  styles.closeButton,
+                  pressed && styles.pressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Zamknij"
+              >
+                <X size={19} color="#4e4d4d" />
+              </Pressable>
+            </View>
+
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.content}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {children}
+            </ScrollView>
+
+            {footer ? (
+              <View style={styles.footer}>{footer}</View>
+            ) : null}
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
   );
 }
 
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(30, 30, 30, 0.42)',
+  },
+  keyboardContainer: {
+    width: '100%',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    maxHeight: '88%',
+    backgroundColor: '#f5e6ce',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    overflow: 'hidden',
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#c5c1b9',
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  header: {
+    minHeight: 58,
+    paddingHorizontal: 22,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  title: {
+    flex: 1,
+    color: '#4e4d4d',
+    fontSize: 19,
+    fontWeight: '700',
+    fontFamily: 'Sen',
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#e9e2d6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  scroll: {
+    flexShrink: 1,
+  },
+  content: {
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    paddingBottom: 24,
+  },
+  footer: {
+    paddingHorizontal: 22,
+    paddingVertical: 14,
+    backgroundColor: '#ffffff',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#e3ded5',
+  },
+});

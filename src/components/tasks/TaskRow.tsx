@@ -1,4 +1,11 @@
-﻿import type { ReactNode } from 'react';
+﻿
+import type { ReactNode } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type { CleaningTask } from '@/types';
 import { Check } from 'lucide-react-native';
 import { findRoom } from '@/data/rooms';
@@ -13,33 +20,142 @@ interface TaskRowProps {
   whenLabel?: string;
 }
 
-export function TaskRow({ task, today, done, onToggle, trailing, whenLabel }: TaskRowProps) {
+export function TaskRow({
+  task,
+  today,
+  done,
+  onToggle,
+  trailing,
+  whenLabel,
+}: TaskRowProps) {
   const room = findRoom(task.roomId);
   const when = whenLabel ?? dueLabel(task.dueDate, today);
-  const details = [room?.name, task.minutes ? `ok. ${task.minutes} min` : null, when].filter(Boolean).join(' Â· ');
+
+  const details = [
+    room?.name,
+    task.minutes ? `ok. ${task.minutes} min` : null,
+    when,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <li className={`flex items-center gap-4 rounded-2xl bg-white p-4 shadow-card ${task.enabled ? '' : 'opacity-60'}`}>
-      <button
-        type="button"
-        onClick={onToggle}
+    <View
+      style={[
+        styles.container,
+        !task.enabled && styles.disabled,
+      ]}
+    >
+      <Pressable
+        onPress={onToggle}
         disabled={!onToggle}
-        aria-label={done ? `Cofnij: ${task.title}` : `Oznacz jako wykonane: ${task.title}`}
-        aria-pressed={done}
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 active:scale-90 disabled:cursor-default ${
-          done ? 'border-brand-600 bg-brand-600 text-white animate-pop' : 'border-ink-300 bg-white text-transparent hover:border-brand-500'
-        }`}
+        accessibilityRole="button"
+        accessibilityLabel={
+          done
+            ? `Cofnij: ${task.title}`
+            : `Oznacz jako wykonane: ${task.title}`
+        }
+        accessibilityState={{
+          disabled: !onToggle,
+          checked: done,
+        }}
+        style={({ pressed }) => [
+          styles.checkButton,
+          done ? styles.checkButtonDone : styles.checkButtonOpen,
+          pressed && styles.pressed,
+        ]}
       >
-        <Check size={16} strokeWidth={3} />
-      </button>
-      <div className="min-w-0 flex-1">
-        <p className={`truncate text-[15px] font-semibold ${done ? 'text-ink-400 line-through' : 'text-ink-900'}`}>
+        {done ? (
+          <Check size={16} color="#ffffff" strokeWidth={3} />
+        ) : null}
+      </Pressable>
+
+      <View style={styles.textContainer}>
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.taskTitle,
+            done && styles.taskTitleDone,
+          ]}
+        >
           {task.title}
-        </p>
-        <p className="mt-0.5 truncate text-xs text-ink-500">{details}</p>
-      </div>
-      {trailing}
-    </li>
+        </Text>
+
+        <Text
+          numberOfLines={1}
+          style={styles.details}
+        >
+          {details}
+        </Text>
+      </View>
+
+      {trailing ? (
+        <View style={styles.trailing}>
+          {trailing}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 15,
+    shadowColor: '#4e4d4d',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  disabled: {
+    opacity: 0.6,
+  },
+  checkButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkButtonDone: {
+    borderColor: '#3b742f',
+    backgroundColor: '#3b742f',
+  },
+  checkButtonOpen: {
+    borderColor: '#c5c5c5',
+    backgroundColor: '#ffffff',
+  },
+  pressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.94 }],
+  },
+  textContainer: {
+    flex: 1,
+    minWidth: 0,
+  },
+  taskTitle: {
+    color: '#4e4d4d',
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Sen',
+  },
+  taskTitleDone: {
+    color: '#999999',
+    textDecorationLine: 'line-through',
+  },
+  details: {
+    marginTop: 4,
+    color: '#88847e',
+    fontSize: 12,
+    fontFamily: 'Sen',
+  },
+  trailing: {
+    flexShrink: 0,
+  },
+});

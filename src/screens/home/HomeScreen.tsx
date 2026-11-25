@@ -1,5 +1,20 @@
 ﻿import { useState } from 'react';
-import { CalendarDays, ChevronRight, ShoppingCart, SlidersHorizontal, Sparkles } from 'lucide-react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  CalendarDays,
+  ChevronRight,
+  ShoppingCart,
+  SlidersHorizontal,
+  Sparkles,
+} from 'lucide-react-native';
+
 import type { CleaningTask } from '@/types';
 import { useAppStore } from '@/store/AppStoreContext';
 import { useNavigation } from '@/store/NavigationContext';
@@ -9,15 +24,26 @@ import { isDoneToday } from '@/lib/tasks';
 import { isScheduledOn, resolveCalendar } from '@/lib/schedule';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { TaskSettingsSheet } from '@/components/tasks/TaskSettingsSheet';
-import { ProgressBar } from '@/components/ui/controls';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { PRODUCTS } from '@/data/products';
 import { TIPS } from '@/data/tips';
+
+const COLORS = {
+  background: '#f5e6ce',
+  green: '#3b742f',
+  greenLight: '#73a62d',
+  dark: '#4e4d4d',
+  muted: '#77766f',
+  white: '#ffffff',
+  lightGreen: '#e8f0e2',
+  border: '#e8e1d5',
+};
 
 export function HomeScreen() {
   const { state, toggleTaskDone } = useAppStore();
   const { navigate } = useNavigation();
   const { showToast } = useToast();
+
   const [selected, setSelected] = useState<CleaningTask | null>(null);
 
   const today = todayISO();
@@ -26,181 +52,508 @@ export function HomeScreen() {
   const product = PRODUCTS[dayIndex % PRODUCTS.length];
 
   const calendar = resolveCalendar(state.home);
+
   const todayTasks = state.tasks
-    .filter((task) => task.enabled && (isScheduledOn(task, today, calendar) || isDoneToday(task, today)))
-    .sort((a, b) => Number(isDoneToday(a, today)) - Number(isDoneToday(b, today)));
+    .filter(
+      (task) =>
+        task.enabled &&
+        (isScheduledOn(task, today, calendar) || isDoneToday(task, today)),
+    )
+    .sort(
+      (a, b) =>
+        Number(isDoneToday(a, today)) - Number(isDoneToday(b, today)),
+    );
+
   const carried = state.tasks.filter(
-    (task) => task.enabled && task.dueDate < today && !isScheduledOn(task, today, calendar) && !isDoneToday(task, today),
+    (task) =>
+      task.enabled &&
+      task.dueDate < today &&
+      !isScheduledOn(task, today, calendar) &&
+      !isDoneToday(task, today),
   );
-  const doneCount = todayTasks.filter((task) => isDoneToday(task, today)).length;
+
+  const doneCount = todayTasks.filter((task) =>
+    isDoneToday(task, today),
+  ).length;
+
   const name = state.profile.name.trim();
-  const openShopping = state.shoppingItems.filter((item) => !item.bought).length;
+
+  const openShopping = state.shoppingItems.filter(
+    (item) => !item.bought,
+  ).length;
 
   const handleToggle = (taskId: string, done: boolean) => {
     toggleTaskDone(taskId);
-    showToast(done ? 'CofniÄ™to zadanie' : 'Zadanie wykonane. Ĺšwietnie!');
+    showToast(done ? 'Cofnięto zadanie' : 'Zadanie wykonane. Świetnie!');
   };
 
   return (
-    <div className="px-5 pt-[max(env(safe-area-inset-top),20px)]">
-      <header className="flex items-center justify-between pb-5">
-        <div>
-          <p className="text-sm font-semibold text-ink-500">{formatFullDate(today)}</p>
-          <h1 className="mt-0.5 text-2xl font-bold leading-tight text-ink-900">
-            {name ? `DzieĹ„ dobry, ${name}` : 'DzieĹ„ dobry'}
-          </h1>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate({ name: 'shopping' })}
-          aria-label="Lista zakupĂłw"
-          className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink-800 shadow-card transition active:scale-95"
-        >
-          <ShoppingCart size={20} />
-          {openShopping > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
-              {openShopping}
-            </span>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top']}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerText}>
+            <Text style={styles.date}>{formatFullDate(today)}</Text>
+            <Text style={styles.greeting}>
+              {name ? `Dzień dobry, ${name}` : 'Dzień dobry'}
+            </Text>
+          </View>
+
+          <Pressable
+            onPress={() => navigate({ name: 'shopping' })}
+            accessibilityRole="button"
+            accessibilityLabel="Lista zakupów"
+            style={({ pressed }) => [
+              styles.shoppingIconButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <ShoppingCart size={21} color={COLORS.dark} />
+
+            {openShopping > 0 && (
+              <View style={styles.shoppingBadge}>
+                <Text style={styles.shoppingBadgeText}>
+                  {openShopping}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+
+        <View style={styles.todayCard}>
+          <View style={styles.todayLabel}>
+            <Sparkles size={17} color="#e8efdf" />
+            <Text style={styles.todayLabelText}>Na dziś</Text>
+          </View>
+
+          <Text style={styles.todayHeadline}>
+            {todayTasks.length === 0
+              ? 'Brak zadań na dziś'
+              : doneCount === todayTasks.length
+                ? 'Wszystko gotowe'
+                : `Zostało ${todayTasks.length - doneCount} z ${todayTasks.length}`}
+          </Text>
+
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width:
+                    todayTasks.length === 0
+                      ? '0%'
+                      : `${(doneCount / todayTasks.length) * 100}%`,
+                },
+              ]}
+            />
+          </View>
+
+          <Text style={styles.doneLabel}>
+            Wykonane: {doneCount}
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Zadania na dziś</Text>
+
+          {todayTasks.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>
+                Nic do zrobienia. Możesz odpocząć albo dodać nowe zadanie
+                w sekcji Mój dom.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.taskList}>
+              {todayTasks.map((task) => {
+                const done = isDoneToday(task, today);
+
+                return (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    today={today}
+                    done={done}
+                    whenLabel={done ? 'Zrobione' : 'Na dziś'}
+                    onToggle={() => handleToggle(task.id, done)}
+                    trailing={
+                      <Pressable
+                        onPress={() => setSelected(task)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Ustawienia: ${task.title}`}
+                        hitSlop={8}
+                        style={({ pressed }) => [
+                          styles.settingsButton,
+                          pressed && styles.pressed,
+                        ]}
+                      >
+                        <SlidersHorizontal
+                          size={17}
+                          color={COLORS.muted}
+                        />
+                      </Pressable>
+                    }
+                  />
+                );
+              })}
+            </View>
           )}
-        </button>
-      </header>
+        </View>
 
-      <section className="rounded-3xl bg-brand-700 p-5 text-white shadow-lift">
-        <div className="flex items-center gap-2 text-sm font-semibold text-brand-100">
-          <Sparkles size={16} /> Na dziĹ›
-        </div>
-        <p className="mt-2 text-2xl font-bold">
-          {todayTasks.length === 0
-            ? 'Brak zadaĹ„ na dziĹ›'
-            : doneCount === todayTasks.length
-              ? 'Wszystko gotowe'
-              : `ZostaĹ‚o ${todayTasks.length - doneCount} z ${todayTasks.length}`}
-        </p>
-        <ProgressBar value={doneCount} max={todayTasks.length} className="mt-4 bg-white/25 [&>div]:from-white [&>div]:to-brand-200" />
-        <p className="mt-2 text-xs text-brand-100">Wykonane: {doneCount}</p>
-      </section>
+        {carried.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              Z poprzednich dni
+            </Text>
 
-      <section className="mt-7">
-        <h2 className="mb-3 text-lg font-bold text-ink-900">Zadania na dziĹ›</h2>
-        {todayTasks.length === 0 ? (
-          <p className="rounded-2xl bg-white p-5 text-sm text-ink-500 shadow-card">
-            Nic do zrobienia. MoĹĽesz odpoczÄ…Ä‡ albo dodaÄ‡ nowe zadanie w sekcji MĂłj dom.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {todayTasks.map((task) => {
-              const done = isDoneToday(task, today);
-              return (
+            <Text style={styles.carriedDescription}>
+              Nic się nie dzieje, jeśli zostawisz je na później.
+              Możesz je przesunąć, pominąć albo zmienić częstotliwość.
+            </Text>
+
+            <View style={styles.taskList}>
+              {carried.map((task) => (
                 <TaskRow
                   key={task.id}
                   task={task}
                   today={today}
-                  done={done}
-                  whenLabel={done ? 'Zrobione' : 'Na dziĹ›'}
-                  onToggle={() => handleToggle(task.id, done)}
+                  done={false}
+                  whenLabel="Kiedy pasuje"
+                  onToggle={() => handleToggle(task.id, false)}
                   trailing={
-                    <button
-                      type="button"
-                      aria-label={`Ustawienia: ${task.title}`}
-                      onClick={() => setSelected(task)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-400 hover:bg-ink-100 hover:text-ink-700"
+                    <Pressable
+                      onPress={() => setSelected(task)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Ustawienia: ${task.title}`}
+                      hitSlop={8}
+                      style={({ pressed }) => [
+                        styles.settingsButton,
+                        pressed && styles.pressed,
+                      ]}
                     >
-                      <SlidersHorizontal size={16} />
-                    </button>
+                      <SlidersHorizontal
+                        size={17}
+                        color={COLORS.muted}
+                      />
+                    </Pressable>
                   }
                 />
-              );
-            })}
-          </ul>
+              ))}
+            </View>
+          </View>
         )}
-      </section>
 
-      {carried.length > 0 && (
-        <section className="mt-7">
-          <h2 className="mb-1 text-lg font-bold text-ink-900">Z poprzednich dni</h2>
-          <p className="mb-3 text-sm leading-relaxed text-ink-500">
-            Nic siÄ™ nie dzieje, jeĹ›li zostawisz je na pĂłĹşniej. MoĹĽesz je przesunÄ…Ä‡, pominÄ…Ä‡ albo zmieniÄ‡ czÄ™stotliwoĹ›Ä‡.
-          </p>
-          <ul className="flex flex-col gap-3">
-            {carried.map((task) => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                today={today}
-                done={false}
-                whenLabel="Kiedy pasuje"
-                onToggle={() => handleToggle(task.id, false)}
-                trailing={
-                  <button
-                    type="button"
-                    aria-label={`Ustawienia: ${task.title}`}
-                    onClick={() => setSelected(task)}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-400 hover:bg-ink-100 hover:text-ink-700"
-                  >
-                    <SlidersHorizontal size={16} />
-                  </button>
-                }
-              />
-            ))}
-          </ul>
-        </section>
+        <View style={styles.quickActions}>
+          <Pressable
+            onPress={() => navigate({ name: 'plan' })}
+            style={({ pressed }) => [
+              styles.quickAction,
+              pressed && styles.pressed,
+            ]}
+          >
+            <CalendarDays size={22} color={COLORS.green} />
+            <Text style={styles.quickActionText}>
+              Harmonogram sprzątania
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => navigate({ name: 'shopping' })}
+            style={({ pressed }) => [
+              styles.quickAction,
+              pressed && styles.pressed,
+            ]}
+          >
+            <ShoppingCart size={22} color={COLORS.green} />
+            <Text style={styles.quickActionText}>
+              Lista zakupów
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Porada dnia</Text>
+
+          <Pressable
+            onPress={() => navigate({ name: 'tip', tipId: tip.id })}
+            style={({ pressed }) => [
+              styles.recommendationCard,
+              pressed && styles.pressed,
+            ]}
+          >
+            <View style={styles.recommendationContent}>
+              <Text style={styles.recommendationTitle}>
+                {tip.title}
+              </Text>
+              <Text style={styles.recommendationDescription}>
+                {tip.summary}
+              </Text>
+            </View>
+
+            <ChevronRight size={21} color={COLORS.green} />
+          </Pressable>
+        </View>
+
+        <View style={[styles.section, styles.lastSection]}>
+          <Text style={styles.sectionTitle}>Polecany produkt</Text>
+
+          <Pressable
+            onPress={() =>
+              navigate({ name: 'product', productId: product.id })
+            }
+            style={({ pressed }) => [
+              styles.productCard,
+              pressed && styles.pressed,
+            ]}
+          >
+            <ProductImage
+              categoryId={product.categoryId}
+              size="sm"
+            />
+
+            <View style={styles.productInfo}>
+              <Text style={styles.productName}>
+                {product.name}
+              </Text>
+              <Text style={styles.productDescription}>
+                {product.shortUse}
+              </Text>
+              <Text style={styles.productLink}>
+                Zobacz kartę produktu
+              </Text>
+            </View>
+
+            <ChevronRight size={20} color={COLORS.green} />
+          </Pressable>
+        </View>
+      </ScrollView>
+
+      {selected && (
+        <TaskSettingsSheet
+          task={selected}
+          onClose={() => setSelected(null)}
+        />
       )}
-
-      <section className="mt-7 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => navigate({ name: 'plan' })}
-          className="flex flex-col items-start gap-3 rounded-3xl bg-white p-4 text-left shadow-card transition active:scale-[0.98]"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sage-100 text-sage-700">
-            <CalendarDays size={20} />
-          </span>
-          <span className="text-sm font-bold text-ink-900">Harmonogram sprzÄ…tania</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate({ name: 'shopping' })}
-          className="flex flex-col items-start gap-3 rounded-3xl bg-white p-4 text-left shadow-card transition active:scale-[0.98]"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sand-100 text-sand-700">
-            <ShoppingCart size={20} />
-          </span>
-          <span className="text-sm font-bold text-ink-900">Lista zakupĂłw</span>
-        </button>
-      </section>
-
-      <section className="mt-7">
-        <h2 className="mb-3 text-lg font-bold text-ink-900">Porada dnia</h2>
-        <button
-          type="button"
-          onClick={() => navigate({ name: 'tip', tipId: tip.id })}
-          className="flex w-full items-center gap-4 rounded-3xl bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="font-bold leading-snug text-ink-900">{tip.title}</p>
-            <p className="mt-1 text-sm text-ink-500">{tip.summary}</p>
-          </div>
-          <ChevronRight size={20} className="shrink-0 text-ink-400" />
-        </button>
-      </section>
-
-      <section className="mt-7 pb-4">
-        <h2 className="mb-3 text-lg font-bold text-ink-900">Polecany produkt</h2>
-        <button
-          type="button"
-          onClick={() => navigate({ name: 'product', productId: product.id })}
-          className="flex w-full items-center gap-4 rounded-3xl bg-white p-4 text-left shadow-card transition active:scale-[0.99]"
-        >
-          <ProductImage categoryId={product.categoryId} size="sm" />
-          <div className="min-w-0 flex-1">
-            <p className="font-bold text-ink-900">{product.name}</p>
-            <p className="mt-1 text-sm text-ink-500">{product.shortUse}</p>
-            <p className="mt-2 text-sm font-semibold text-brand-700">Zobacz kartÄ™ produktu</p>
-          </div>
-        </button>
-      </section>
-      {selected && <TaskSettingsSheet task={selected} onClose={() => setSelected(null)} />}
-    </div>
+    </SafeAreaView>
   );
 }
 
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 32,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 22,
+    gap: 12,
+  },
+  headerText: {
+    flex: 1,
+  },
+  date: {
+    color: COLORS.muted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  greeting: {
+    marginTop: 3,
+    color: COLORS.dark,
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  shoppingIconButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+  },
+  shoppingBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    minWidth: 19,
+    height: 19,
+    borderRadius: 10,
+    backgroundColor: COLORS.greenLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  shoppingBadgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  todayCard: {
+    borderRadius: 25,
+    backgroundColor: COLORS.green,
+    padding: 20,
+    elevation: 3,
+  },
+  todayLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  todayLabelText: {
+    color: '#e8efdf',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  todayHeadline: {
+    marginTop: 12,
+    color: COLORS.white,
+    fontSize: 23,
+    lineHeight: 30,
+    fontWeight: '700',
+  },
+  progressTrack: {
+    height: 9,
+    marginTop: 18,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.28)',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 6,
+    backgroundColor: COLORS.white,
+  },
+  doneLabel: {
+    marginTop: 9,
+    color: '#e8efdf',
+    fontSize: 12,
+  },
+  section: {
+    marginTop: 27,
+  },
+  sectionTitle: {
+    marginBottom: 12,
+    color: COLORS.dark,
+    fontSize: 19,
+    fontWeight: '700',
+  },
+  emptyCard: {
+    borderRadius: 19,
+    backgroundColor: COLORS.white,
+    padding: 18,
+    elevation: 1,
+  },
+  emptyText: {
+    color: COLORS.muted,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  taskList: {
+    gap: 11,
+  },
+  settingsButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  carriedDescription: {
+    marginTop: -5,
+    marginBottom: 13,
+    color: COLORS.muted,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 11,
+    marginTop: 27,
+  },
+  quickAction: {
+    flex: 1,
+    minHeight: 105,
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    borderRadius: 19,
+    backgroundColor: COLORS.white,
+    padding: 15,
+    elevation: 1,
+  },
+  quickActionText: {
+    color: COLORS.dark,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  recommendationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 19,
+    backgroundColor: COLORS.white,
+    padding: 17,
+    elevation: 1,
+  },
+  recommendationContent: {
+    flex: 1,
+    gap: 6,
+  },
+  recommendationTitle: {
+    color: COLORS.dark,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  recommendationDescription: {
+    color: COLORS.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  productCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    borderRadius: 19,
+    backgroundColor: COLORS.white,
+    padding: 12,
+    elevation: 1,
+  },
+  productInfo: {
+    flex: 1,
+    gap: 5,
+  },
+  productName: {
+    color: COLORS.dark,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  productDescription: {
+    color: COLORS.muted,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  productLink: {
+    marginTop: 3,
+    color: COLORS.green,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  lastSection: {
+    marginBottom: 8,
+  },
+  pressed: {
+    opacity: 0.78,
+  },
+});

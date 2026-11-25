@@ -13,7 +13,10 @@ import { AuthScreen } from '@/auth/AuthScreen';
 import { HouseholdChoiceScreen } from '@/auth/HouseholdChoiceScreen';
 import { useAuth } from '@/auth/AuthContext';
 import { useHousehold } from '@/auth/HouseholdContext';
+
 import { WelcomeScreen } from '@/screens/welcome/WelcomeScreen';
+import { OnboardingScreen } from '@/screens/onboarding/OnboardingScreen';
+
 import { useNavigation } from '@/store/NavigationContext';
 
 export default function HomeScreen() {
@@ -88,13 +91,7 @@ export default function HomeScreen() {
   }
 
   if (!onboardingComplete || isEditingPlan) {
-    return (
-      <PlaceholderScreen
-        message="Przygotowujemy konfigurację Twojego domu."
-        onSignOut={handleSignOut}
-        error={logoutError}
-      />
-    );
+    return <OnboardingScreen />;
   }
 
   return (
@@ -151,6 +148,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#4e4d4d',
     fontSize: 16,
+    fontFamily: 'Sen',
   },
   placeholder: {
     flex: 1,
@@ -164,12 +162,14 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '700',
     marginBottom: 18,
+    fontFamily: 'SenBold',
   },
   message: {
     color: '#4e4d4d',
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+    fontFamily: 'Sen',
   },
   backButton: {
     marginTop: 32,
@@ -194,5 +194,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     marginTop: 16,
+    fontFamily: 'Sen',
   },
 });
