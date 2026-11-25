@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -16,7 +17,11 @@ import { WelcomeScreen } from '@/screens/welcome/WelcomeScreen';
 import { useNavigation } from '@/store/NavigationContext';
 
 export default function HomeScreen() {
-  const { session, loading: authLoading } = useAuth();
+  const {
+    session,
+    loading: authLoading,
+    signOut,
+  } = useAuth();
 
   const {
     householdId,
@@ -28,6 +33,22 @@ export default function HomeScreen() {
   const { isEditingPlan } = useNavigation();
 
   const [showWelcome, setShowWelcome] = useState(true);
+  const [logoutError, setLogoutError] = useState('');
+
+  async function handleSignOut() {
+    setLogoutError('');
+
+    try {
+      await signOut();
+      setShowWelcome(true);
+    } catch (err) {
+      setLogoutError(
+        err instanceof Error
+          ? err.message
+          : 'Nie udało się wylogować. Spróbuj ponownie.',
+      );
+    }
+  }
 
   if (authLoading || (session && householdLoading)) {
     return (
@@ -66,12 +87,12 @@ export default function HomeScreen() {
     );
   }
 
-  // Ekrany onboardingu i aplikacji głównej
-  // zostaną podłączone po adaptacji do React Native.
   if (!onboardingComplete || isEditingPlan) {
     return (
       <PlaceholderScreen
         message="Przygotowujemy konfigurację Twojego domu."
+        onSignOut={handleSignOut}
+        error={logoutError}
       />
     );
   }
@@ -79,15 +100,42 @@ export default function HomeScreen() {
   return (
     <PlaceholderScreen
       message="Ekran główny EcoMeans zostanie podłączony w kolejnym etapie."
+      onSignOut={handleSignOut}
+      error={logoutError}
     />
   );
 }
 
-function PlaceholderScreen({ message }: { message: string }) {
+function PlaceholderScreen({
+  message,
+  onSignOut,
+  error,
+}: {
+  message: string;
+  onSignOut: () => void;
+  error: string;
+}) {
   return (
     <SafeAreaView style={styles.placeholder}>
       <Text style={styles.logo}>EcoMeans</Text>
+
       <Text style={styles.message}>{message}</Text>
+
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : null}
+
+      <Pressable
+        onPress={onSignOut}
+        style={({ pressed }) => [
+          styles.backButton,
+          pressed && styles.backButtonPressed,
+        ]}
+      >
+        <Text style={styles.backButtonText}>
+          Wróć do ekranu startowego
+        </Text>
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -122,5 +170,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  backButton: {
+    marginTop: 32,
+    backgroundColor: '#3b742f',
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  backButtonPressed: {
+    backgroundColor: '#315f27',
+    transform: [{ scale: 0.98 }],
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Sen',
+  },
+  errorText: {
+    color: '#b91c1c',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 16,
   },
 });

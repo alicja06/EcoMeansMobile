@@ -8,6 +8,7 @@ import { HouseholdProvider } from '@/auth/HouseholdContext';
 import { AppStoreProvider } from '@/store/AppStoreContext';
 import { NavigationProvider } from '@/store/NavigationContext';
 import { ToastProvider } from '@/store/ToastContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,16 +31,18 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <HouseholdProvider>
-        <AppStoreProvider>
-          <NavigationProvider>
-            <ToastProvider>
-              <Stack screenOptions={{ headerShown: false }} />
-            </ToastProvider>
-          </NavigationProvider>
-        </AppStoreProvider>
-      </HouseholdProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <HouseholdProvider>
+          <AppStoreProvider>
+            <NavigationProvider>
+              <ToastProvider>
+                <Stack screenOptions={{ headerShown: false }} />
+              </ToastProvider>
+            </NavigationProvider>
+          </AppStoreProvider>
+        </HouseholdProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

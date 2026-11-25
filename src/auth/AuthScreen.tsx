@@ -1,18 +1,21 @@
-
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-} from 'react-native';
-import { supabase } from '@/lib/supabase';
+} from "react-native";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
+import { supabase } from "@/lib/supabase";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+WebBrowser.maybeCompleteAuthSession();
 
 interface AuthScreenProps {
   onAuthenticated: () => void;
@@ -20,30 +23,30 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   async function handleSubmit() {
     if (!email.trim() || !password) {
-      setError('Wypełnij adres e-mail i hasło.');
+      setError("Wypełnij adres e-mail i hasło.");
       return;
     }
 
-    if (mode === 'register' && password.length < 6) {
-      setError('Hasło musi mieć co najmniej 6 znaków.');
+    if (mode === "register" && password.length < 6) {
+      setError("Hasło musi mieć co najmniej 6 znaków.");
       return;
     }
 
-    setError('');
-    setMessage('');
+    setError("");
+    setMessage("");
     setLoading(true);
 
     try {
-      if (mode === 'register') {
+      if (mode === "register") {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -55,7 +58,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
           onAuthenticated();
         } else {
           setMessage(
-            'Konto zostało utworzone. Sprawdź swoją skrzynkę e-mail i potwierdź adres.',
+            "Konto zostało utworzone. Sprawdź swoją skrzynkę e-mail i potwierdź adres.",
           );
         }
       } else {
@@ -70,30 +73,123 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
       }
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Wystąpił błąd. Spróbuj ponownie.',
+        err instanceof Error ? err.message : "Wystąpił błąd. Spróbuj ponownie.",
       );
     } finally {
       setLoading(false);
     }
   }
 
-  function changeMode(nextMode: 'login' | 'register') {
+  async function handleGoogleSignIn() {
+    setError("");
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const redirectTo = Linking.createURL("auth/callback");
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (!data.url) {
+        throw new Error("Nie udało się rozpocząć logowania Google.");
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        redirectTo,
+      );
+
+      if (result.type === "cancel" || result.type === "dismiss") {
+        return;
+      }
+
+      if (result.type !== "success") {
+        throw new Error("Logowanie Google nie zostało zakończone.");
+      }
+
+      const callbackUrl = new URL(result.url);
+
+      const hashParams = new URLSearchParams(
+        callbackUrl.hash.replace(/^#/, ""),
+      );
+
+      const oauthError =
+        callbackUrl.searchParams.get("error_description") ||
+        callbackUrl.searchParams.get("error") ||
+        hashParams.get("error_description") ||
+        hashParams.get("error");
+
+      if (oauthError) {
+        throw new Error(oauthError);
+      }
+
+      const code = callbackUrl.searchParams.get("code");
+
+      if (code) {
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+
+        if (exchangeError) throw exchangeError;
+      } else {
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+
+        if (!accessToken || !refreshToken) {
+          throw new Error(
+            "Nie otrzymano kompletnych tokenów autoryzacyjnych Google.",
+          );
+        }
+
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (sessionError) throw sessionError;
+      }
+
+      onAuthenticated();
+    } catch (err) {
+      console.error("[GOOGLE ERROR]", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Nie udało się zalogować przez Google.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function changeMode(nextMode: "login" | "register") {
     setMode(nextMode);
-    setError('');
-    setMessage('');
+    setError("");
+    setMessage("");
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
         >
           <View style={styles.container}>
             <Pressable onPress={onBack} style={styles.backButton}>
@@ -102,35 +198,32 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
 
             <View style={styles.header}>
               <Image
-                source={require('../../assets/images/logo-ecomeans-zielone.png')}
+                source={require("../../assets/images/logo-ecomeans-zielone.png")}
                 style={styles.logo}
                 resizeMode="contain"
                 accessibilityLabel="EcoMeans"
               />
 
               <Text style={styles.heading}>
-                {mode === 'login' ? 'Witaj ponownie!' : 'Dołącz do EcoMeans'}
+                {mode === "login" ? "Witaj ponownie!" : "Dołącz do EcoMeans"}
               </Text>
 
               <Text style={styles.subtitle}>
-                {mode === 'login'
-                  ? 'Zaloguj się do swojego domu.'
-                  : 'Utwórz konto i zadbaj o dom po swojemu.'}
+                {mode === "login"
+                  ? "Zaloguj się do swojego domu."
+                  : "Utwórz konto i zadbaj o dom po swojemu."}
               </Text>
             </View>
 
             <View style={styles.tabs}>
               <Pressable
-                onPress={() => changeMode('login')}
-                style={[
-                  styles.tab,
-                  mode === 'login' && styles.activeTab,
-                ]}
+                onPress={() => changeMode("login")}
+                style={[styles.tab, mode === "login" && styles.activeTab]}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    mode === 'login' && styles.activeTabText,
+                    mode === "login" && styles.activeTabText,
                   ]}
                 >
                   Logowanie
@@ -138,16 +231,13 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
               </Pressable>
 
               <Pressable
-                onPress={() => changeMode('register')}
-                style={[
-                  styles.tab,
-                  mode === 'register' && styles.activeTab,
-                ]}
+                onPress={() => changeMode("register")}
+                style={[styles.tab, mode === "register" && styles.activeTab]}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    mode === 'register' && styles.activeTabText,
+                    mode === "register" && styles.activeTabText,
                   ]}
                 >
                   Rejestracja
@@ -181,10 +271,10 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                   secureTextEntry
                   autoCapitalize="none"
                   autoComplete={
-                    mode === 'login' ? 'current-password' : 'new-password'
+                    mode === "login" ? "current-password" : "new-password"
                   }
                   textContentType={
-                    mode === 'login' ? 'password' : 'newPassword'
+                    mode === "login" ? "password" : "newPassword"
                   }
                   editable={!loading}
                   placeholder="Minimum 6 znaków"
@@ -216,11 +306,34 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
               >
                 <Text style={styles.submitButtonText}>
                   {loading
-                    ? 'Chwileczkę...'
-                    : mode === 'login'
-                      ? 'Zaloguj się'
-                      : 'Utwórz konto'}
+                    ? "Chwileczkę..."
+                    : mode === "login"
+                      ? "Zaloguj się"
+                      : "Utwórz konto"}
                 </Text>
+              </Pressable>
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>lub</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <Pressable
+                onPress={handleGoogleSignIn}
+                disabled={loading}
+                style={({ pressed }) => [
+                  styles.googleButton,
+                  pressed && !loading && styles.googleButtonPressed,
+                  loading && styles.disabledButton,
+                ]}
+              >
+                <Image
+                  source={require("../../assets/images/google-g-logo.png")}
+                  style={styles.googleLogo}
+                  resizeMode="contain"
+                  accessibilityLabel="Google"
+                />
+                <Text style={styles.googleButtonText}>Kontynuuj z Google</Text>
               </Pressable>
             </View>
           </View>
@@ -233,35 +346,36 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5e6ce',
+    backgroundColor: "#f5e6ce",
   },
   flex: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 24,
-    paddingVertical: 28,
+    paddingTop: 20,
+    paddingBottom: 28,
   },
   container: {
-    width: '100%',
+    width: "100%",
     maxWidth: 420,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   backButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: 30,
     paddingVertical: 8,
   },
   backText: {
-    color: '#3b742f',
+    color: "#3b742f",
     fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Sen',
+    fontWeight: "600",
+    fontFamily: "Sen",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 28,
   },
   logo: {
@@ -270,46 +384,46 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   heading: {
-    color: '#3b742f',
+    color: "#3b742f",
     fontSize: 30,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 8,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   subtitle: {
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 14,
-    textAlign: 'center',
-    fontFamily: 'Sen',
+    textAlign: "center",
+    fontFamily: "Sen",
   },
   tabs: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.6)",
     borderRadius: 16,
     padding: 4,
     marginBottom: 20,
   },
   tab: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 13,
     borderRadius: 12,
   },
   activeTab: {
-    backgroundColor: '#3b742f',
+    backgroundColor: "#3b742f",
   },
   tabText: {
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'Sen',
+    fontWeight: "700",
+    fontFamily: "Sen",
   },
   activeTabText: {
-    color: '#ffffff',
+    color: "#ffffff",
   },
   form: {
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 24,
     padding: 22,
     gap: 18,
@@ -318,61 +432,102 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Sen',
+    fontWeight: "600",
+    fontFamily: "Sen",
   },
   input: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: '#d9d0bd',
+    borderColor: "#d9d0bd",
     borderRadius: 12,
     paddingHorizontal: 15,
     paddingVertical: 13,
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 15,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   errorBox: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: "#fef2f2",
     borderRadius: 12,
     padding: 12,
   },
   errorText: {
-    color: '#b91c1c',
+    color: "#b91c1c",
     fontSize: 13,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   messageBox: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: "#f0fdf4",
     borderRadius: 12,
     padding: 12,
   },
   messageText: {
-    color: '#166534',
+    color: "#166534",
     fontSize: 13,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   submitButton: {
-    backgroundColor: '#3b742f',
+    backgroundColor: "#3b742f",
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   submitButtonPressed: {
-    backgroundColor: '#315f27',
+    backgroundColor: "#315f27",
     transform: [{ scale: 0.98 }],
   },
   disabledButton: {
     opacity: 0.6,
   },
   submitButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Sen',
+    fontWeight: "700",
+    fontFamily: "Sen",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#d9d0bd",
+  },
+  dividerText: {
+    color: "#999184",
+    fontSize: 13,
+    fontFamily: "Sen",
+  },
+  googleButton: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#747775",
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  googleButtonPressed: {
+    backgroundColor: "#f5f1e9",
+    transform: [{ scale: 0.98 }],
+  },
+  googleLogo: {
+    width: 24,
+    height: 24,
+  },
+  googleButtonText: {
+    color: "#1f1f1f",
+    fontSize: 15,
+    fontWeight: "700",
+    fontFamily: "Sen",
   },
 });

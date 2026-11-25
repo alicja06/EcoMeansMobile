@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useContext,
@@ -13,6 +12,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,12 +54,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
+  async function signOut() {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      throw error;
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
         session,
         user: session?.user ?? null,
         loading,
+        signOut,
       }}
     >
       {children}
