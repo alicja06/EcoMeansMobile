@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import {
   Animated,
@@ -17,102 +18,18 @@ interface WelcomeScreenProps {
 }
 
 const LEAVES = [
-  {
-    viewBox: "82 0 24 9",
-    left: "1%",
-    top: "5%",
-    width: 46,
-    animation: "a",
-    delay: 0,
-  },
-  {
-    viewBox: "28 26 32 17",
-    left: "10%",
-    top: "18%",
-    width: 38,
-    animation: "b",
-    delay: 300,
-  },
-  {
-    viewBox: "64 11 17 22",
-    left: "2%",
-    top: "32%",
-    width: 55,
-    animation: "c",
-    delay: 600,
-  },
-  {
-    viewBox: "0 9 35 15",
-    left: "11%",
-    top: "46%",
-    width: 40,
-    animation: "d",
-    delay: 900,
-  },
-  {
-    viewBox: "82 0 24 9",
-    left: "4%",
-    top: "62%",
-    width: 48,
-    animation: "b",
-    delay: 1200,
-  },
-  {
-    viewBox: "64 11 17 22",
-    left: "12%",
-    top: "78%",
-    width: 36,
-    animation: "a",
-    delay: 1500,
-  },
-  {
-    viewBox: "28 26 32 17",
-    right: "2%",
-    top: "8%",
-    width: 40,
-    animation: "d",
-    delay: 200,
-  },
-  {
-    viewBox: "0 9 35 15",
-    right: "10%",
-    top: "22%",
-    width: 54,
-    animation: "c",
-    delay: 500,
-  },
-  {
-    viewBox: "82 0 24 9",
-    right: "3%",
-    top: "37%",
-    width: 36,
-    animation: "a",
-    delay: 800,
-  },
-  {
-    viewBox: "64 11 17 22",
-    right: "12%",
-    top: "53%",
-    width: 48,
-    animation: "b",
-    delay: 1100,
-  },
-  {
-    viewBox: "28 26 32 17",
-    right: "1%",
-    top: "68%",
-    width: 42,
-    animation: "c",
-    delay: 1400,
-  },
-  {
-    viewBox: "0 9 35 15",
-    right: "10%",
-    top: "83%",
-    width: 56,
-    animation: "d",
-    delay: 1700,
-  },
+  { viewBox: "82 0 24 9", left: 2, top: 4, endLeft: 19, endTop: 7, width: 46, animation: "a", delay: 0 },
+  { viewBox: "28 26 32 17", left: 88, top: 14, endLeft: 73, endTop: 10, width: 38, animation: "b", delay: 300 },
+  { viewBox: "64 11 17 22", left: 5, top: 29, endLeft: 3, endTop: 24, width: 55, animation: "c", delay: 600 },
+  { viewBox: "0 9 35 15", left: 94, top: 43, endLeft: 84, endTop: 34, width: 40, animation: "d", delay: 900 },
+  { viewBox: "82 0 24 9", left: 8, top: 59, endLeft: 2, endTop: 65, width: 48, animation: "b", delay: 1200 },
+  { viewBox: "64 11 17 22", left: 91, top: 76, endLeft: 80, endTop: 83, width: 36, animation: "a", delay: 1500 },
+  { viewBox: "28 26 32 17", left: 76, top: 5, endLeft: 96, endTop: 19, width: 40, animation: "d", delay: 200 },
+  { viewBox: "0 9 35 15", left: 55, top: 20, endLeft: 3, endTop: 42, width: 54, animation: "c", delay: 500 },
+  { viewBox: "82 0 24 9", left: 18, top: 36, endLeft: 82, endTop: 48, width: 36, animation: "a", delay: 800 },
+  { viewBox: "64 11 17 22", left: 66, top: 51, endLeft: 97, endTop: 58, width: 48, animation: "b", delay: 1100 },
+  { viewBox: "28 26 32 17", left: 42, top: 67, endLeft: 53, endTop: 91, width: 42, animation: "c", delay: 1400 },
+  { viewBox: "0 9 35 15", left: 83, top: 82, endLeft: 13, endTop: 96, width: 56, animation: "d", delay: 1700 },
 ] as const;
 
 const ROTATIONS = {
@@ -193,9 +110,11 @@ function LeafIllustration({
 }
 
 export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
-  const { height } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
-  const animations = useRef(LEAVES.map(() => new Animated.Value(0))).current;
+  const animations = useRef(
+    LEAVES.map(() => new Animated.Value(0)),
+  ).current;
 
   useEffect(() => {
     const runningAnimations = animations.map((value, index) =>
@@ -220,9 +139,20 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
       <View style={styles.container}>
         <View pointerEvents="none" style={StyleSheet.absoluteFill}>
           {LEAVES.map((leaf, index) => {
+            const translateX = animations[index].interpolate({
+              inputRange: [0, 1],
+              outputRange: [
+                0,
+                (width * (leaf.endLeft - leaf.left)) / 100,
+              ],
+            });
+
             const translateY = animations[index].interpolate({
               inputRange: [0, 1],
-              outputRange: [-height, 0],
+              outputRange: [
+                height * (leaf.endTop / 100 - leaf.top / 100 - 1),
+                height * (leaf.endTop / 100 - leaf.top / 100),
+              ],
             });
 
             const opacity = animations[index].interpolate({
@@ -241,15 +171,21 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
                 style={[
                   styles.leaf,
                   {
-                    left: "left" in leaf ? leaf.left : undefined,
-                    right: "right" in leaf ? leaf.right : undefined,
-                    top: leaf.top,
+                    left: `${leaf.left}%`,
+                    top: `${leaf.top}%`,
                     opacity,
-                    transform: [{ translateY }, { rotate }],
+                    transform: [
+                      { translateX },
+                      { translateY },
+                      { rotate },
+                    ],
                   },
                 ]}
               >
-                <LeafIllustration viewBox={leaf.viewBox} width={leaf.width} />
+                <LeafIllustration
+                  viewBox={leaf.viewBox}
+                  width={leaf.width}
+                />
               </Animated.View>
             );
           })}
@@ -262,6 +198,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             resizeMode="contain"
             accessibilityLabel="EcoMeans"
           />
+
           <Text style={styles.heading}>
             Czysty dom.
             {"\n"}
@@ -302,21 +239,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     paddingHorizontal: 28,
     paddingVertical: 36,
     overflow: "hidden",
   },
   leaf: {
     position: "absolute",
+    zIndex: 0,
   },
   content: {
-    flex: 1,
     width: "100%",
     maxWidth: 420,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1,
+    zIndex: 2,
   },
   logo: {
     width: 224,
@@ -343,7 +280,8 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 420,
     alignItems: "center",
-    zIndex: 1,
+    marginTop: 44,
+    zIndex: 2,
   },
   button: {
     width: "100%",
