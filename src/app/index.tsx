@@ -1,98 +1,126 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
+import { AuthScreen } from '@/auth/AuthScreen';
+import { HouseholdChoiceScreen } from '@/auth/HouseholdChoiceScreen';
+import { useAuth } from '@/auth/AuthContext';
+import { useHousehold } from '@/auth/HouseholdContext';
+import { WelcomeScreen } from '@/screens/welcome/WelcomeScreen';
+import { useNavigation } from '@/store/NavigationContext';
+
+export default function HomeScreen() {
+  const { session, loading: authLoading } = useAuth();
+
+  const {
+    householdId,
+    onboardingComplete,
+    loading: householdLoading,
+    refreshHousehold,
+  } = useHousehold();
+
+  const { isEditingPlan } = useNavigation();
+
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  if (authLoading || (session && householdLoading)) {
     return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#3b742f" />
+        <Text style={styles.loadingText}>Ładowanie EcoMeans...</Text>
+      </View>
     );
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
+  if (!session) {
+    if (showWelcome) {
+      return (
+        <WelcomeScreen onStart={() => setShowWelcome(false)} />
+      );
+    }
+
+    return (
+      <AuthScreen
+        onAuthenticated={() => setShowWelcome(false)}
+        onBack={() => setShowWelcome(true)}
+      />
+    );
+  }
+
+  if (!householdId) {
+    return (
+      <HouseholdChoiceScreen
+        onHouseholdCreated={async () => {
+          await refreshHousehold();
+        }}
+        onHouseholdJoined={async () => {
+          await refreshHousehold();
+        }}
+      />
+    );
+  }
+
+  // Ekrany onboardingu i aplikacji głównej
+  // zostaną podłączone po adaptacji do React Native.
+  if (!onboardingComplete || isEditingPlan) {
+    return (
+      <PlaceholderScreen
+        message="Przygotowujemy konfigurację Twojego domu."
+      />
+    );
+  }
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <PlaceholderScreen
+      message="Ekran główny EcoMeans zostanie podłączony w kolejnym etapie."
+    />
   );
 }
 
-export default function HomeScreen() {
+function PlaceholderScreen({ message }: { message: string }) {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <SafeAreaView style={styles.placeholder}>
+      <Text style={styles.logo}>EcoMeans</Text>
+      <Text style={styles.message}>{message}</Text>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loading: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    backgroundColor: '#f5e6ce',
+    gap: 14,
   },
-  title: {
+  loadingText: {
+    color: '#4e4d4d',
+    fontSize: 16,
+  },
+  placeholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+    backgroundColor: '#f5e6ce',
+  },
+  logo: {
+    color: '#3b742f',
+    fontSize: 34,
+    fontWeight: '700',
+    marginBottom: 18,
+  },
+  message: {
+    color: '#4e4d4d',
+    fontSize: 16,
     textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    lineHeight: 24,
   },
 });
