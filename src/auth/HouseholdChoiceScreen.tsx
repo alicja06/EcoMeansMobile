@@ -8,10 +8,10 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 import { supabase } from '@/lib/supabase';
 
 interface HouseholdChoiceScreenProps {
@@ -112,13 +112,13 @@ export function HouseholdChoiceScreen({
                 accessibilityLabel="EcoMeans"
               />
 
-              <Text style={styles.heading}>
+              <AppText style={styles.heading}>
                 Zacznijmy od Twojego domu
-              </Text>
+              </AppText>
 
-              <Text style={styles.subtitle}>
+              <AppText style={styles.subtitle}>
                 Wybierz, jak chcesz korzystać z EcoMeans.
-              </Text>
+              </AppText>
             </View>
 
             {mode === 'choice' && (
@@ -133,14 +133,16 @@ export function HouseholdChoiceScreen({
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.optionEmoji}>🏡</Text>
-                  <Text style={styles.createTitle}>
+                  <AppText style={styles.optionEmoji}>🏡</AppText>
+
+                  <AppText style={styles.createTitle}>
                     Tworzę własny plan
-                  </Text>
-                  <Text style={styles.createDescription}>
+                  </AppText>
+
+                  <AppText style={styles.createDescription}>
                     Utwórz gospodarstwo i przygotuj plan sprzątania swojego
                     domu.
-                  </Text>
+                  </AppText>
                 </Pressable>
 
                 <Pressable
@@ -153,30 +155,35 @@ export function HouseholdChoiceScreen({
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.optionEmoji}>🤝</Text>
-                  <Text style={styles.joinTitle}>
+                  <AppText style={styles.optionEmoji}>🤝</AppText>
+
+                  <AppText style={styles.joinTitle}>
                     Dołączam do istniejącego
-                  </Text>
-                  <Text style={styles.joinDescription}>
+                  </AppText>
+
+                  <AppText style={styles.joinDescription}>
                     Masz zaproszenie? Dołącz do gospodarstwa i wspólnego planu.
-                  </Text>
+                  </AppText>
                 </Pressable>
               </View>
             )}
 
             {mode === 'create' && (
               <View style={styles.form}>
-                <Text style={styles.formHeading}>
+                <AppText style={styles.formHeading}>
                   Twój dom, Twój plan
-                </Text>
+                </AppText>
 
-                <Text style={styles.formDescription}>
+                <AppText style={styles.formDescription}>
                   Nadaj nazwę swojemu gospodarstwu. Później przejdziesz do
                   konfiguracji domu i planu sprzątania.
-                </Text>
+                </AppText>
 
                 <View style={styles.field}>
-                  <Text style={styles.label}>Nazwa gospodarstwa</Text>
+                  <AppText style={styles.label}>
+                    Nazwa gospodarstwa
+                  </AppText>
+
                   <TextInput
                     value={householdName}
                     onChangeText={setHouseholdName}
@@ -190,7 +197,7 @@ export function HouseholdChoiceScreen({
 
                 {error ? (
                   <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>{error}</Text>
+                    <AppText style={styles.errorText}>{error}</AppText>
                   </View>
                 ) : null}
 
@@ -203,28 +210,35 @@ export function HouseholdChoiceScreen({
                     loading && styles.disabledButton,
                   ]}
                 >
-                  <Text style={styles.submitButtonText}>
+                  <AppText style={styles.submitButtonText}>
                     {loading ? 'Tworzenie...' : 'Utwórz gospodarstwo'}
-                  </Text>
+                  </AppText>
                 </Pressable>
 
                 <Pressable onPress={goToChoice} style={styles.backButton}>
-                  <Text style={styles.backText}>← Wróć do wyboru</Text>
+                  <AppText style={styles.backText}>
+                    ← Wróć do wyboru
+                  </AppText>
                 </Pressable>
               </View>
             )}
 
             {mode === 'join' && (
               <View style={styles.form}>
-                <Text style={styles.formHeading}>Dołącz do domu</Text>
+                <AppText style={styles.formHeading}>
+                  Dołącz do domu
+                </AppText>
 
-                <Text style={styles.formDescription}>
+                <AppText style={styles.formDescription}>
                   Wklej kod zaproszenia otrzymany od osoby, która utworzyła
                   gospodarstwo.
-                </Text>
+                </AppText>
 
                 <View style={styles.field}>
-                  <Text style={styles.label}>Kod zaproszenia</Text>
+                  <AppText style={styles.label}>
+                    Kod zaproszenia
+                  </AppText>
+
                   <TextInput
                     value={invitationToken}
                     onChangeText={setInvitationToken}
@@ -239,7 +253,7 @@ export function HouseholdChoiceScreen({
 
                 {error ? (
                   <View style={styles.errorBox}>
-                    <Text style={styles.errorText}>{error}</Text>
+                    <AppText style={styles.errorText}>{error}</AppText>
                   </View>
                 ) : null}
 
@@ -252,20 +266,22 @@ export function HouseholdChoiceScreen({
                     loading && styles.disabledButton,
                   ]}
                 >
-                  <Text style={styles.submitButtonText}>
+                  <AppText style={styles.submitButtonText}>
                     {loading ? 'Dołączanie...' : 'Dołącz do gospodarstwa'}
-                  </Text>
+                  </AppText>
                 </Pressable>
 
                 <Pressable onPress={goToChoice} style={styles.backButton}>
-                  <Text style={styles.backText}>← Wróć do wyboru</Text>
+                  <AppText style={styles.backText}>
+                    ← Wróć do wyboru
+                  </AppText>
                 </Pressable>
               </View>
             )}
 
-            <Text style={styles.footer}>
+            <AppText style={styles.footer}>
               Wspólny dom, wspólny plan, mniej codziennego chaosu.
-            </Text>
+            </AppText>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -307,13 +323,11 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     textAlign: 'center',
     marginBottom: 12,
-    fontFamily: 'Sen',
   },
   subtitle: {
     color: '#4e4d4d',
     fontSize: 15,
     textAlign: 'center',
-    fontFamily: 'Sen',
   },
   options: {
     gap: 16,
@@ -337,28 +351,22 @@ const styles = StyleSheet.create({
   createTitle: {
     color: '#ffffff',
     fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Sen',
   },
   createDescription: {
     color: 'rgba(255,255,255,0.85)',
     fontSize: 14,
     lineHeight: 21,
     marginTop: 9,
-    fontFamily: 'Sen',
   },
   joinTitle: {
     color: '#3b742f',
     fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Sen',
   },
   joinDescription: {
     color: '#4e4d4d',
     fontSize: 14,
     lineHeight: 21,
     marginTop: 9,
-    fontFamily: 'Sen',
   },
   form: {
     backgroundColor: 'rgba(255,255,255,0.8)',
@@ -369,13 +377,11 @@ const styles = StyleSheet.create({
   formHeading: {
     color: '#3b742f',
     fontSize: 27,
-    fontFamily: 'Sen',
   },
   formDescription: {
     color: '#4e4d4d',
     fontSize: 14,
     lineHeight: 21,
-    fontFamily: 'Sen',
   },
   field: {
     gap: 8,
@@ -383,8 +389,6 @@ const styles = StyleSheet.create({
   label: {
     color: '#4e4d4d',
     fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Sen',
   },
   input: {
     backgroundColor: '#ffffff',
@@ -405,7 +409,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#b91c1c',
     fontSize: 13,
-    fontFamily: 'Sen',
   },
   submitButton: {
     backgroundColor: '#3b742f',
@@ -417,8 +420,6 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: '#ffffff',
     fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'Sen',
   },
   pressedButton: {
     backgroundColor: '#315f27',
@@ -434,8 +435,6 @@ const styles = StyleSheet.create({
   backText: {
     color: '#3b742f',
     fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'Sen',
   },
   pressed: {
     opacity: 0.85,
@@ -446,6 +445,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginTop: 28,
-    fontFamily: 'Sen',
   },
 });

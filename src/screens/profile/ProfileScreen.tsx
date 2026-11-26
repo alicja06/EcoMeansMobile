@@ -1,19 +1,47 @@
-﻿import { useState } from "react";
-import { Bell, ChevronRight, Info, Shield, Trash2, User } from "lucide-react-native";
-import { dayPartsLabel, timeBudgetLabel } from "@/data/home";
-import { useAppStore } from "@/store/AppStoreContext";
-import { useNavigation } from "@/store/NavigationContext";
-import { useToast } from "@/store/ToastContext";
-import { ScreenHeader } from "@/components/layout/ScreenHeader";
-import { DemoNotice, Toggle } from "@/components/ui/controls";
-import { Sheet } from "@/components/ui/Sheet";
-import { PRODUCTS } from "@/data/products";
-import { TIPS } from "@/data/tips";
+﻿import { useState } from 'react';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Switch,
+  TextInput,
+  View,
+} from 'react-native';
+import { AppText } from '@/components/ui/AppText';
+import {
+  Bell,
+  ChevronRight,
+  Info,
+  Shield,
+  Trash2,
+  User,
+} from 'lucide-react-native';
+
+import { dayPartsLabel, timeBudgetLabel } from '@/data/home';
+import { useAppStore } from '@/store/AppStoreContext';
+import { useNavigation } from '@/store/NavigationContext';
+import { useToast } from '@/store/ToastContext';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { PRODUCTS } from '@/data/products';
+import { TIPS } from '@/data/tips';
+
+const COLORS = {
+  green: '#3b742f',
+  lightGreen: '#e8f0e2',
+  cream: '#f5e6ce',
+  text: '#4e4d4d',
+  muted: '#77766f',
+  white: '#ffffff',
+  border: '#e8e1d5',
+  danger: '#c0392b',
+  dangerLight: '#fbe9e7',
+};
 
 export function ProfileScreen() {
   const { state, updateProfile, resetState } = useAppStore();
   const { navigate, startPlanEditing } = useNavigation();
   const { showToast } = useToast();
+
   const [nameDraft, setNameDraft] = useState(state.profile.name);
   const [accountOpen, setAccountOpen] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -21,222 +49,576 @@ export function ProfileScreen() {
   const favorites = PRODUCTS.filter((product) =>
     state.favoriteProductIds.includes(product.id),
   );
-  const savedTips = TIPS.filter((tip) => state.savedTipIds.includes(tip.id));
+
+  const savedTips = TIPS.filter((tip) =>
+    state.savedTipIds.includes(tip.id),
+  );
+
   const { notifications } = state.profile;
+
+  const notificationOptions = [
+    ['reminders', 'Przypomnienia o zadaniach'],
+    ['dailySummary', 'Podsumowanie dnia'],
+    ['newTips', 'Nowe porady'],
+  ] as const;
+
+  function handleSaveName() {
+    updateProfile({ name: nameDraft.trim() });
+    showToast('Zapisano imię');
+  }
+
+  function handleReset() {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+
+    resetState();
+    setConfirmReset(false);
+    setAccountOpen(false);
+    setNameDraft('');
+    showToast('Dane prototypu zostały zresetowane');
+  }
 
   return (
     <>
       <ScreenHeader title="Profil" />
-      <div className="flex flex-col gap-6 px-5 pt-2">
-        <section className="rounded-3xl bg-white p-5 shadow-card">
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-brand-700">
-              <User size={22} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-ink-500">Twoje imiÄ™</p>
-              <p className="truncate font-bold text-ink-900">
-                {state.profile.name || "Nie podano"}
-              </p>
-            </div>
-          </div>
-          <form
-            className="mt-4 flex gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              updateProfile({ name: nameDraft.trim() });
-              showToast("Zapisano imiÄ™");
-            }}
-          >
-            <input
+
+      <View style={styles.content}>
+        {/* Dane użytkownika */}
+        <View style={styles.card}>
+          <View style={styles.userRow}>
+            <View style={styles.avatar}>
+              <User size={22} color={COLORS.green} />
+            </View>
+
+            <View style={styles.userInfo}>
+              <AppText style={styles.eyebrow}>Twoje imię</AppText>
+              <AppText style={styles.userName} numberOfLines={1}>
+                {state.profile.name || 'Nie podano'}
+              </AppText>
+            </View>
+          </View>
+
+          <View style={styles.nameForm}>
+            <TextInput
               value={nameDraft}
-              onChange={(event) => setNameDraft(event.target.value)}
-              placeholder="Wpisz imiÄ™"
-              aria-label="ImiÄ™"
-              className="min-w-0 flex-1 rounded-2xl border border-ink-200 bg-ink-50 px-4 py-3 text-ink-900 outline-none focus:border-brand-500"
+              onChangeText={setNameDraft}
+              placeholder="Wpisz imię"
+              placeholderTextColor={COLORS.muted}
+              style={styles.nameInput}
+              accessibilityLabel="Imię"
+              returnKeyType="done"
+              onSubmitEditing={handleSaveName}
             />
-            <button
-              type="submit"
-              className="rounded-2xl bg-brand-600 px-4 font-semibold text-white transition hover:bg-brand-700"
-            >
-              Zapisz
-            </button>
-          </form>
-        </section>
 
-        <section>
-          <h2 className="mb-3 text-lg font-bold text-ink-700">
-            TwĂłj harmonogram sprzÄ…tania
-          </h2>
-          <div className="rounded-3xl bg-white p-4 shadow-card">
-            <p className="mt-1 text-sm text-ink-500">
-              {timeBudgetLabel(state.home.timeBudget)} Â·{" "}
+            <Pressable
+              onPress={handleSaveName}
+              style={({ pressed }) => [
+                styles.saveButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppText style={styles.saveButtonText}>Zapisz</AppText>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Harmonogram */}
+        <View>
+          <AppText style={styles.sectionTitle}>
+            Twój harmonogram sprzątania
+          </AppText>
+
+          <View style={styles.card}>
+            <AppText style={styles.description}>
+              {timeBudgetLabel(state.home.timeBudget)} ·{' '}
               {dayPartsLabel(state.home.dayParts)}
-            </p>
-            <p className="mt-1 text-sm text-ink-500">
-              Pomieszczenia: {state.home.places.length || "brak"} Â· UrzÄ…dzenia:{" "}
-              {state.home.appliances.length || "brak"}
-            </p>
-            <button
-              type="button"
-              onClick={startPlanEditing}
-              className="mt-4 w-full rounded-2xl bg-brand-50 py-3 text-sm font-bold text-brand-800"
-            >
-              Edytuj plan
-            </button>
-          </div>
-        </section>
+            </AppText>
 
-        <section>
-          <h2 className="mb-3 text-lg font-bold text-ink-700">Powiadomienia</h2>
-          <div className="flex flex-col gap-1 rounded-3xl bg-white p-4 shadow-card">
-            {(
-              [
-                ["reminders", "Przypomnienia o zadaniach"],
-                ["dailySummary", "Podsumowanie dnia"],
-                ["newTips", "Nowe porady"],
-              ] as const
-            ).map(([key, label]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between gap-4 py-2.5"
-              >
-                <span className="text-sm font-semibold text-ink-900">
-                  {label}
-                </span>
-                <Toggle
-                  label={label}
-                  checked={notifications[key]}
-                  onChange={(next) =>
+            <AppText style={styles.description}>
+              Pomieszczenia: {state.home.places.length || 'brak'} ·
+              {' '}Urządzenia: {state.home.appliances.length || 'brak'}
+            </AppText>
+
+            <Pressable
+              onPress={startPlanEditing}
+              style={({ pressed }) => [
+                styles.editPlanButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <AppText style={styles.editPlanText}>Edytuj plan</AppText>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Powiadomienia */}
+        <View>
+          <AppText style={styles.sectionTitle}>Powiadomienia</AppText>
+
+          <View style={styles.card}>
+            {notificationOptions.map(([key, label]) => (
+              <View key={key} style={styles.notificationRow}>
+                <AppText style={styles.notificationLabel}>{label}</AppText>
+
+                <Switch
+                  value={notifications[key]}
+                  onValueChange={(next) =>
                     updateProfile({
-                      notifications: { ...notifications, [key]: next },
+                      notifications: {
+                        ...notifications,
+                        [key]: next,
+                      },
                     })
                   }
+                  trackColor={{
+                    false: '#d8d4cc',
+                    true: COLORS.lightGreen,
+                  }}
+                  thumbColor={
+                    notifications[key] ? COLORS.green : '#f4f3f0'
+                  }
                 />
-              </div>
+              </View>
             ))}
-          </div>
-          <div className="mt-3">
-            <DemoNotice text="Powiadomienia sÄ… na razie ustawieniami poglÄ…dowymi. Nie sÄ… wysyĹ‚ane." />
-          </div>
-        </section>
+          </View>
 
-        <section>
-          <h2 className="mb-3 text-sm font-bold text-ink-700">
-            Ulubione produkty
-          </h2>
+          <View style={styles.notice}>
+            <Info size={17} color={COLORS.green} />
+            <AppText style={styles.noticeText}>
+              Powiadomienia są na razie ustawieniami poglądowymi.
+              Nie są wysyłane.
+            </AppText>
+          </View>
+        </View>
+
+        {/* Ulubione produkty */}
+        <View>
+          <AppText style={styles.sectionTitle}>Ulubione produkty</AppText>
+
           {favorites.length === 0 ? (
-            <p className="text-sm text-ink-500">Brak ulubionych produktĂłw.</p>
+            <AppText style={styles.emptyText}>
+              Brak ulubionych produktów.
+            </AppText>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <View style={styles.listCard}>
               {favorites.map((product) => (
-                <li key={product.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      navigate({ name: "product", productId: product.id })
-                    }
-                    className="flex w-full items-center justify-between rounded-2xl bg-white p-4 text-left shadow-card"
-                  >
-                    <span className="font-semibold text-ink-900">
-                      {product.name}
-                    </span>
-                    <ChevronRight size={18} className="text-ink-400" />
-                  </button>
-                </li>
+                <Pressable
+                  key={product.id}
+                  onPress={() =>
+                    navigate({
+                      name: 'product',
+                      productId: product.id,
+                    })
+                  }
+                  style={({ pressed }) => [
+                    styles.listItem,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <AppText style={styles.listItemText}>
+                    {product.name}
+                  </AppText>
+                  <ChevronRight size={19} color={COLORS.muted} />
+                </Pressable>
               ))}
-            </ul>
+            </View>
           )}
-        </section>
+        </View>
 
-        <section>
-          <h2 className="mb-3 text-sm font-bold text-ink-700">
-            Zapisane porady
-          </h2>
+        {/* Zapisane porady */}
+        <View>
+          <AppText style={styles.sectionTitle}>Zapisane porady</AppText>
+
           {savedTips.length === 0 ? (
-            <p className="text-sm text-ink-500">
-              Nie zapisano jeszcze ĹĽadnych porad.
-            </p>
+            <AppText style={styles.emptyText}>
+              Nie zapisano jeszcze żadnych porad.
+            </AppText>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <View style={styles.listCard}>
               {savedTips.map((tip) => (
-                <li key={tip.id}>
-                  <button
-                    type="button"
-                    onClick={() => navigate({ name: "tip", tipId: tip.id })}
-                    className="flex w-full items-center justify-between rounded-2xl bg-white p-4 text-left shadow-card"
-                  >
-                    <span className="pr-3 font-semibold text-ink-900">
-                      {tip.title}
-                    </span>
-                    <ChevronRight size={18} className="shrink-0 text-ink-400" />
-                  </button>
-                </li>
+                <Pressable
+                  key={tip.id}
+                  onPress={() =>
+                    navigate({ name: 'tip', tipId: tip.id })
+                  }
+                  style={({ pressed }) => [
+                    styles.listItem,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <AppText style={styles.listItemText}>
+                    {tip.title}
+                  </AppText>
+                  <ChevronRight size={19} color={COLORS.muted} />
+                </Pressable>
               ))}
-            </ul>
+            </View>
           )}
-        </section>
+        </View>
 
-        <section className="overflow-hidden rounded-3xl bg-white shadow-card">
-          <div className="flex items-center gap-3 border-b border-ink-100 p-4">
-            <Info size={18} className="text-ink-500" />
-            <span className="text-sm font-semibold text-ink-900">
+        {/* Informacje i konto */}
+        <View style={styles.card}>
+          <View style={styles.infoRow}>
+            <Info size={19} color={COLORS.muted} />
+            <AppText style={styles.infoText}>
               EcoMeans, prototyp 0.1
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate({ name: "privacy" })}
-            className="flex w-full items-center justify-between border-b border-ink-100 p-4 text-left"
-          >
-            <span className="flex items-center gap-3 text-sm font-semibold text-ink-900">
-              <Shield size={18} className="text-ink-500" /> Polityka prywatnoĹ›ci
-            </span>
-            <ChevronRight size={18} className="text-ink-400" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setAccountOpen(true)}
-            className="flex w-full items-center justify-between p-4 text-left"
-          >
-            <span className="flex items-center gap-3 text-sm font-semibold text-ink-900">
-              <Bell size={18} className="text-ink-500" /> ZarzÄ…dzanie kontem
-            </span>
-            <ChevronRight size={18} className="text-ink-400" />
-          </button>
-        </section>
-      </div>
+            </AppText>
+          </View>
 
-      {accountOpen && (
-        <Sheet title="ZarzÄ…dzanie kontem" onClose={() => setAccountOpen(false)}>
-          <p className="text-sm leading-relaxed text-ink-600">
-            Konta uĹĽytkownikĂłw pojawiÄ… siÄ™ w kolejnym etapie. Dane prototypu sÄ…
-            zapisane tylko w tej przeglÄ…darce.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              if (!confirmReset) return setConfirmReset(true);
-              resetState();
-              setConfirmReset(false);
-              setAccountOpen(false);
-              setNameDraft("");
-              showToast("Dane prototypu zostaĹ‚y zresetowane");
-            }}
-            className={`mt-6 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-semibold transition ${
-              confirmReset
-                ? "bg-danger-500 text-white"
-                : "bg-danger-50 text-danger-700"
-            }`}
+          <Pressable
+            onPress={() => navigate({ name: 'privacy' })}
+            style={({ pressed }) => [
+              styles.menuRow,
+              pressed && styles.pressed,
+            ]}
           >
-            <Trash2 size={18} />
-            {confirmReset
-              ? "Kliknij ponownie, aby potwierdziÄ‡"
-              : "Resetuj dane prototypu"}
-          </button>
-        </Sheet>
-      )}
+            <View style={styles.menuLabel}>
+              <Shield size={19} color={COLORS.muted} />
+              <AppText style={styles.infoText}>
+                Polityka prywatności
+              </AppText>
+            </View>
+            <ChevronRight size={19} color={COLORS.muted} />
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              setConfirmReset(false);
+              setAccountOpen(true);
+            }}
+            style={({ pressed }) => [
+              styles.menuRow,
+              pressed && styles.pressed,
+            ]}
+          >
+            <View style={styles.menuLabel}>
+              <Bell size={19} color={COLORS.muted} />
+              <AppText style={styles.infoText}>
+                Zarządzanie kontem
+              </AppText>
+            </View>
+            <ChevronRight size={19} color={COLORS.muted} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Okno zarządzania kontem */}
+      <Modal
+        visible={accountOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setAccountOpen(false);
+          setConfirmReset(false);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => {
+              setAccountOpen(false);
+              setConfirmReset(false);
+            }}
+          />
+
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+
+            <View style={styles.modalHeader}>
+              <AppText style={styles.modalTitle}>
+                Zarządzanie kontem
+              </AppText>
+
+              <Pressable
+                onPress={() => {
+                  setAccountOpen(false);
+                  setConfirmReset(false);
+                }}
+                hitSlop={10}
+              >
+                <AppText style={styles.closeText}>Zamknij</AppText>
+              </Pressable>
+            </View>
+
+            <AppText style={styles.modalDescription}>
+              Konta użytkowników pojawią się w kolejnym etapie.
+              Dane prototypu są obecnie powiązane z Twoim kontem
+              i gospodarstwem domowym.
+            </AppText>
+
+            {confirmReset && (
+              <AppText style={styles.warningText}>
+                Czy na pewno chcesz zresetować dane prototypu?
+                Tej operacji nie można cofnąć.
+              </AppText>
+            )}
+
+            <Pressable
+              onPress={handleReset}
+              style={({ pressed }) => [
+                styles.resetButton,
+                confirmReset && styles.resetButtonConfirm,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Trash2 size={19} color={COLORS.danger} />
+
+              <AppText style={styles.resetButtonText}>
+                {confirmReset
+                  ? 'Kliknij ponownie, aby potwierdzić'
+                  : 'Resetuj dane prototypu'}
+              </AppText>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
 
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 32,
+    gap: 24,
+  },
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    padding: 18,
+    gap: 12,
+    elevation: 1,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.lightGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  eyebrow: {
+    color: COLORS.muted,
+    fontSize: 12,
+    fontFamily: 'SenBold',
+  },
+  userName: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontFamily: 'SenBold',
+    marginTop: 2,
+  },
+  nameForm: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  nameInput: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: '#f7f5f0',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: COLORS.text,
+    fontSize: 14,
+    fontFamily: 'Sen',
+  },
+  saveButton: {
+    backgroundColor: COLORS.green,
+    borderRadius: 16,
+    paddingHorizontal: 17,
+    paddingVertical: 14,
+  },
+  saveButtonText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  sectionTitle: {
+    color: COLORS.text,
+    fontSize: 17,
+    fontFamily: 'SenBold',
+    marginBottom: 10,
+  },
+  description: {
+    color: COLORS.muted,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  editPlanButton: {
+    backgroundColor: COLORS.lightGreen,
+    borderRadius: 16,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  editPlanText: {
+    color: COLORS.green,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 7,
+  },
+  notificationLabel: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 9,
+    marginTop: 10,
+    paddingHorizontal: 4,
+  },
+  noticeText: {
+    flex: 1,
+    color: COLORS.muted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  emptyText: {
+    color: COLORS.muted,
+    fontSize: 13,
+    paddingVertical: 8,
+  },
+  listCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    elevation: 1,
+  },
+  listItem: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0ece5',
+  },
+  listItemText: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  infoText: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  menuRow: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  menuLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  modalContent: {
+    backgroundColor: COLORS.cream,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 36,
+    gap: 18,
+  },
+  modalHandle: {
+    alignSelf: 'center',
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#c9c0b2',
+    marginBottom: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 19,
+    fontFamily: 'SenBold',
+  },
+  closeText: {
+    color: COLORS.green,
+    fontSize: 13,
+    fontFamily: 'SenBold',
+  },
+  modalDescription: {
+    color: COLORS.text,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  warningText: {
+    color: COLORS.danger,
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: 'SenBold',
+  },
+  resetButton: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    borderRadius: 16,
+    backgroundColor: COLORS.dangerLight,
+    paddingHorizontal: 12,
+  },
+  resetButtonConfirm: {
+    backgroundColor: '#f5d2ce',
+  },
+  resetButtonText: {
+    color: COLORS.danger,
+    fontSize: 13,
+    fontFamily: 'SenBold',
+  },
+});

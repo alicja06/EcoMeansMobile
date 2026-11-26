@@ -1,13 +1,10 @@
-
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
-  SafeAreaView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 
 import { AuthScreen } from '@/auth/AuthScreen';
 import { HouseholdChoiceScreen } from '@/auth/HouseholdChoiceScreen';
@@ -17,13 +14,14 @@ import { useHousehold } from '@/auth/HouseholdContext';
 import { WelcomeScreen } from '@/screens/welcome/WelcomeScreen';
 import { OnboardingScreen } from '@/screens/onboarding/OnboardingScreen';
 
+import { ScreenRouter } from '@/components/layout/ScreenRouter';
+import { BottomNav } from '@/components/layout/BottomNav';
 import { useNavigation } from '@/store/NavigationContext';
 
 export default function HomeScreen() {
   const {
     session,
     loading: authLoading,
-    signOut,
   } = useAuth();
 
   const {
@@ -36,28 +34,14 @@ export default function HomeScreen() {
   const { isEditingPlan } = useNavigation();
 
   const [showWelcome, setShowWelcome] = useState(true);
-  const [logoutError, setLogoutError] = useState('');
-
-  async function handleSignOut() {
-    setLogoutError('');
-
-    try {
-      await signOut();
-      setShowWelcome(true);
-    } catch (err) {
-      setLogoutError(
-        err instanceof Error
-          ? err.message
-          : 'Nie udało się wylogować. Spróbuj ponownie.',
-      );
-    }
-  }
 
   if (authLoading || (session && householdLoading)) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color="#3b742f" />
-        <Text style={styles.loadingText}>Ładowanie EcoMeans...</Text>
+        <AppText style={styles.loadingText}>
+          Ładowanie EcoMeans...
+        </AppText>
       </View>
     );
   }
@@ -95,45 +79,13 @@ export default function HomeScreen() {
   }
 
   return (
-    <PlaceholderScreen
-      message="Ekran główny EcoMeans zostanie podłączony w kolejnym etapie."
-      onSignOut={handleSignOut}
-      error={logoutError}
-    />
-  );
-}
+    <View style={styles.app}>
+      <View style={styles.content}>
+        <ScreenRouter />
+      </View>
 
-function PlaceholderScreen({
-  message,
-  onSignOut,
-  error,
-}: {
-  message: string;
-  onSignOut: () => void;
-  error: string;
-}) {
-  return (
-    <SafeAreaView style={styles.placeholder}>
-      <Text style={styles.logo}>EcoMeans</Text>
-
-      <Text style={styles.message}>{message}</Text>
-
-      {error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : null}
-
-      <Pressable
-        onPress={onSignOut}
-        style={({ pressed }) => [
-          styles.backButton,
-          pressed && styles.backButtonPressed,
-        ]}
-      >
-        <Text style={styles.backButtonText}>
-          Wróć do ekranu startowego
-        </Text>
-      </Pressable>
-    </SafeAreaView>
+      <BottomNav />
+    </View>
   );
 }
 
@@ -148,52 +100,12 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#4e4d4d',
     fontSize: 16,
-    fontFamily: 'Sen',
   },
-  placeholder: {
+  app: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 28,
     backgroundColor: '#f5e6ce',
   },
-  logo: {
-    color: '#3b742f',
-    fontSize: 34,
-    fontWeight: '700',
-    marginBottom: 18,
-    fontFamily: 'SenBold',
-  },
-  message: {
-    color: '#4e4d4d',
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontFamily: 'Sen',
-  },
-  backButton: {
-    marginTop: 32,
-    backgroundColor: '#3b742f',
-    borderRadius: 16,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  backButtonPressed: {
-    backgroundColor: '#315f27',
-    transform: [{ scale: 0.98 }],
-  },
-  backButtonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'Sen',
-  },
-  errorText: {
-    color: '#b91c1c',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 16,
-    fontFamily: 'Sen',
+  content: {
+    flex: 1,
   },
 });

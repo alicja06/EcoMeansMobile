@@ -1,5 +1,4 @@
-﻿
-import { useEffect, type ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -7,10 +6,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { X } from 'lucide-react-native';
+
+import { AppText } from '@/components/ui/AppText';
 
 interface SheetProps {
   title: string;
@@ -20,11 +20,6 @@ interface SheetProps {
 }
 
 export function Sheet({ title, onClose, children, footer }: SheetProps) {
-  useEffect(() => {
-    // Obsługa zamykania jest realizowana przez Modal
-    // i przycisk powrotu systemu Android.
-  }, []);
-
   return (
     <Modal
       visible
@@ -49,7 +44,9 @@ export function Sheet({ title, onClose, children, footer }: SheetProps) {
             <View style={styles.handle} />
 
             <View style={styles.header}>
-              <Text style={styles.title}>{title}</Text>
+              <AppText style={styles.title}>
+                {title}
+              </AppText>
 
               <Pressable
                 onPress={onClose}
@@ -123,8 +120,6 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#4e4d4d',
     fontSize: 19,
-    fontWeight: '700',
-    fontFamily: 'Sen',
   },
   closeButton: {
     width: 40,

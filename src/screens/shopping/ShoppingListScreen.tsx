@@ -1,5 +1,19 @@
-﻿import { useState } from 'react';
-import { Check, Plus, ShoppingBasket, Trash2 } from 'lucide-react-native';
+﻿
+import { useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
+import {
+  Check,
+  Plus,
+  ShoppingBasket,
+  Trash2,
+} from 'lucide-react-native';
+
 import { PRODUCTS } from '@/data/products';
 import { useAppStore } from '@/store/AppStoreContext';
 import { useNavigation } from '@/store/NavigationContext';
@@ -7,11 +21,20 @@ import { useToast } from '@/store/ToastContext';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { EmptyState } from '@/components/ui/controls';
 import { Sheet } from '@/components/ui/Sheet';
+import { AppText } from '@/components/ui/AppText';
 
 export function ShoppingListScreen() {
-  const { state, addShoppingItem, toggleShoppingItem, removeShoppingItem, clearBoughtShoppingItems } = useAppStore();
+  const {
+    state,
+    addShoppingItem,
+    toggleShoppingItem,
+    removeShoppingItem,
+    clearBoughtShoppingItems,
+  } = useAppStore();
+
   const { goBack, navigate } = useNavigation();
   const { showToast } = useToast();
+
   const [name, setName] = useState('');
   const [catalogOpen, setCatalogOpen] = useState(false);
 
@@ -20,145 +43,456 @@ export function ShoppingListScreen() {
 
   const submit = () => {
     const trimmed = name.trim();
+
     if (!trimmed) return;
+
     addShoppingItem(trimmed, null);
     setName('');
     showToast('Dodano do listy');
   };
 
-  const renderItem = (id: string, label: string, isBought: boolean, productId: string | null) => (
-    <li key={id} className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card">
-      <button
-        type="button"
-        aria-label={isBought ? `Oznacz jako do kupienia: ${label}` : `Oznacz jako kupione: ${label}`}
-        aria-pressed={isBought}
-        onClick={() => toggleShoppingItem(id)}
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition ${
-          isBought ? 'border-brand-600 bg-brand-600 text-white' : 'border-ink-300 text-transparent hover:border-brand-500'
-        }`}
+  const renderItem = (
+    id: string,
+    label: string,
+    isBought: boolean,
+    productId: string | null,
+  ) => (
+    <View key={id} style={styles.shoppingItem}>
+      <Pressable
+        onPress={() => toggleShoppingItem(id)}
+        accessibilityRole="checkbox"
+        accessibilityLabel={
+          isBought
+            ? `Oznacz jako do kupienia: ${label}`
+            : `Oznacz jako kupione: ${label}`
+        }
+        accessibilityState={{ checked: isBought }}
+        style={({ pressed }) => [
+          styles.checkButton,
+          isBought
+            ? styles.checkButtonActive
+            : styles.checkButtonInactive,
+          pressed && styles.pressed,
+        ]}
       >
-        <Check size={15} strokeWidth={3} />
-      </button>
-      <div className="min-w-0 flex-1">
-        {productId ? (
-          <button
-            type="button"
-            onClick={() => navigate({ name: 'product', productId })}
-            className={`truncate text-left font-semibold underline-offset-4 hover:underline ${isBought ? 'text-ink-400 line-through' : 'text-ink-900'}`}
+        {isBought && (
+          <Check size={15} color="#ffffff" strokeWidth={3} />
+        )}
+      </Pressable>
+
+      <View style={styles.itemContent}>
+        <Pressable
+          disabled={!productId}
+          onPress={() => {
+            if (productId) {
+              navigate({ name: 'product', productId });
+            }
+          }}
+          accessibilityRole={productId ? 'link' : undefined}
+          accessibilityLabel={productId ? `Zobacz produkt: ${label}` : label}
+          style={styles.itemTitleButton}
+        >
+          <AppText
+
+            style={[
+              styles.itemTitle,
+              isBought && styles.itemTitleBought,
+            ]}
           >
             {label}
-          </button>
-        ) : (
-          <p className={`truncate font-semibold ${isBought ? 'text-ink-400 line-through' : 'text-ink-900'}`}>{label}</p>
+          </AppText>
+        </Pressable>
+
+        {productId && (
+          <AppText style={styles.productBrand}>
+            EcoMeans
+          </AppText>
         )}
-        {productId && <p className="text-xs text-brand-700">EcoMeans</p>}
-      </div>
-      <button
-        type="button"
-        aria-label={`UsuĹ„: ${label}`}
-        onClick={() => removeShoppingItem(id)}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-400 transition hover:bg-danger-50 hover:text-danger-500"
+      </View>
+
+      <Pressable
+        onPress={() => removeShoppingItem(id)}
+        accessibilityRole="button"
+        accessibilityLabel={`Usuń: ${label}`}
+        hitSlop={8}
+        style={({ pressed }) => [
+          styles.removeButton,
+          pressed && styles.pressed,
+        ]}
       >
-        <Trash2 size={18} />
-      </button>
-    </li>
+        <Trash2 size={18} color="#99968F" />
+      </Pressable>
+    </View>
   );
 
   return (
     <>
-      <ScreenHeader title="Lista zakupĂłw" subtitle={`Do kupienia: ${toBuy.length}`} onBack={goBack} />
-      <div className="px-5 pt-2">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit();
-          }}
-          className="flex gap-2"
-        >
-          <input
+      <ScreenHeader
+        title="Lista zakupów"
+        subtitle={`Do kupienia: ${toBuy.length}`}
+        onBack={goBack}
+      />
+
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.addRow}>
+          <TextInput
             value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Dodaj wĹ‚asnÄ… pozycjÄ™"
-            aria-label="Nazwa produktu"
-            className="min-w-0 flex-1 rounded-2xl border border-ink-200 bg-white px-4 py-3 text-ink-900 outline-none focus:border-brand-500"
+            onChangeText={setName}
+            onSubmitEditing={submit}
+            returnKeyType="done"
+            placeholder="Dodaj własną pozycję"
+            placeholderTextColor="#99968F"
+            accessibilityLabel="Nazwa produktu"
+            style={styles.nameInput}
           />
-          <button
-            type="submit"
-            aria-label="Dodaj pozycjÄ™"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-600 text-white transition hover:bg-brand-700 active:scale-95"
+
+          <Pressable
+            onPress={submit}
+            disabled={!name.trim()}
+            accessibilityRole="button"
+            accessibilityLabel="Dodaj pozycję"
+            style={({ pressed }) => [
+              styles.addButton,
+              !name.trim() && styles.addButtonDisabled,
+              pressed && name.trim() && styles.pressed,
+            ]}
           >
-            <Plus size={20} />
-          </button>
-        </form>
-        <button
-          type="button"
-          onClick={() => setCatalogOpen(true)}
-          className="mt-3 w-full rounded-2xl border border-brand-200 bg-brand-50 py-3 text-sm font-semibold text-brand-800 transition hover:bg-brand-100"
+            <Plus size={20} color="#ffffff" />
+          </Pressable>
+        </View>
+
+        <Pressable
+          onPress={() => setCatalogOpen(true)}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.catalogButton,
+            pressed && styles.pressed,
+          ]}
         >
-          Dodaj produkt z katalogu EcoMeans
-        </button>
+          <AppText style={styles.catalogButtonText}>
+            Dodaj produkt z katalogu EcoMeans
+          </AppText>
+        </Pressable>
 
         {state.shoppingItems.length === 0 ? (
-          <div className="mt-6">
-            <EmptyState icon={ShoppingBasket} title="Lista jest pusta" text="Dodaj wĹ‚asnÄ… pozycjÄ™ albo produkt z katalogu EcoMeans." />
-          </div>
+          <View style={styles.emptyState}>
+            <EmptyState
+              icon={ShoppingBasket}
+              title="Lista jest pusta"
+              text="Dodaj własną pozycję albo produkt z katalogu EcoMeans."
+            />
+          </View>
         ) : (
           <>
-            <h2 className="mb-3 mt-6 text-sm font-bold text-ink-700">Do kupienia</h2>
-            <ul className="flex flex-col gap-2.5">
-              {toBuy.map((item) => renderItem(item.id, item.name, false, item.productId))}
-              {toBuy.length === 0 && <li className="text-sm text-ink-500">Wszystko kupione.</li>}
-            </ul>
+            <AppText style={styles.sectionTitle}>
+              Do kupienia
+            </AppText>
+
+            <View style={styles.itemList}>
+              {toBuy.map((item) =>
+                renderItem(
+                  item.id,
+                  item.name,
+                  false,
+                  item.productId,
+                ),
+              )}
+
+              {toBuy.length === 0 && (
+                <AppText style={styles.emptyListText}>
+                  Wszystko kupione.
+                </AppText>
+              )}
+            </View>
+
             {bought.length > 0 && (
               <>
-                <div className="mb-3 mt-7 flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-ink-700">Kupione</h2>
-                  <button
-                    type="button"
-                    onClick={() => {
+                <View style={styles.boughtHeader}>
+                  <AppText style={styles.sectionTitle}>
+                    Kupione
+                  </AppText>
+
+                  <Pressable
+                    onPress={() => {
                       clearBoughtShoppingItems();
-                      showToast('UsuniÄ™to kupione pozycje');
+                      showToast('Usunięto kupione pozycje');
                     }}
-                    className="text-sm font-semibold text-brand-700 hover:underline"
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.clearButton,
+                      pressed && styles.pressed,
+                    ]}
                   >
-                    WyczyĹ›Ä‡ kupione
-                  </button>
-                </div>
-                <ul className="flex flex-col gap-2.5">
-                  {bought.map((item) => renderItem(item.id, item.name, true, item.productId))}
-                </ul>
+                    <AppText style={styles.clearButtonText}>
+                      Wyczyść kupione
+                    </AppText>
+                  </Pressable>
+                </View>
+
+                <View style={styles.itemList}>
+                  {bought.map((item) =>
+                    renderItem(
+                      item.id,
+                      item.name,
+                      true,
+                      item.productId,
+                    ),
+                  )}
+                </View>
               </>
             )}
           </>
         )}
-      </div>
+      </ScrollView>
 
       {catalogOpen && (
-        <Sheet title="Katalog EcoMeans" onClose={() => setCatalogOpen(false)}>
-          <ul className="flex flex-col gap-2">
-            {PRODUCTS.map((product) => {
-              const onList = state.shoppingItems.some((item) => item.productId === product.id && !item.bought);
-              return (
-                <li key={product.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3.5 shadow-card">
-                  <span className="min-w-0 font-semibold text-ink-900">{product.name}</span>
-                  <button
-                    type="button"
-                    disabled={onList}
-                    onClick={() => {
-                      addShoppingItem(product.name, product.id);
-                      showToast('Dodano do listy');
-                    }}
-                    className="shrink-0 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:bg-ink-200 disabled:text-ink-500"
-                  >
-                    {onList ? 'Na liĹ›cie' : 'Dodaj'}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+        <Sheet
+          title="Katalog EcoMeans"
+          onClose={() => setCatalogOpen(false)}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.catalogList}>
+              {PRODUCTS.map((product) => {
+                const onList = state.shoppingItems.some(
+                  (item) =>
+                    item.productId === product.id && !item.bought,
+                );
+
+                return (
+                  <View key={product.id} style={styles.catalogItem}>
+                    <View style={styles.catalogProductName}>
+                      <AppText style={styles.catalogProductText}>
+                        {product.name}
+                      </AppText>
+                    </View>
+
+                    <Pressable
+                      disabled={onList}
+                      onPress={() => {
+                        addShoppingItem(product.name, product.id);
+                        showToast('Dodano do listy');
+                      }}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: onList }}
+                      style={({ pressed }) => [
+                        styles.catalogAddButton,
+                        onList && styles.catalogAddButtonDisabled,
+                        pressed && !onList && styles.pressed,
+                      ]}
+                    >
+                      <AppText
+
+                        style={[
+                          styles.catalogAddButtonText,
+                          onList && styles.catalogAddButtonTextDisabled,
+                        ]}
+                      >
+                        {onList ? 'Na liście' : 'Dodaj'}
+                      </AppText>
+                    </Pressable>
+                  </View>
+                );
+              })}
+            </View>
+          </ScrollView>
         </Sheet>
       )}
     </>
   );
 }
 
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: '#f5e6ce',
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 32,
+  },
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  nameInput: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: '#dedbd4',
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: '#4e4d4d',
+    fontFamily: 'Sen',
+    fontSize: 14,
+  },
+  addButton: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#3b742f',
+  },
+  addButtonDisabled: {
+    opacity: 0.5,
+  },
+  catalogButton: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#c9dcbf',
+    borderRadius: 16,
+    backgroundColor: '#edf4e9',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  catalogButtonText: {
+    color: '#3b742f',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  emptyState: {
+    marginTop: 24,
+  },
+  sectionTitle: {
+    marginTop: 24,
+    marginBottom: 12,
+    color: '#4e4d4d',
+    fontSize: 14,
+  },
+  itemList: {
+    gap: 10,
+  },
+  shoppingItem: {
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    padding: 14,
+    elevation: 1,
+  },
+  checkButton: {
+    width: 28,
+    height: 28,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderRadius: 14,
+  },
+  checkButtonActive: {
+    borderColor: '#3b742f',
+    backgroundColor: '#3b742f',
+  },
+  checkButtonInactive: {
+    borderColor: '#b8b6af',
+    backgroundColor: '#ffffff',
+  },
+  itemContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  itemTitleButton: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+  },
+  itemTitle: {
+    color: '#4e4d4d',
+    fontSize: 14,
+  },
+  itemTitleBought: {
+    color: '#99968F',
+    textDecorationLine: 'line-through',
+  },
+  productBrand: {
+    marginTop: 2,
+    color: '#3b742f',
+    fontSize: 12,
+  },
+  removeButton: {
+    width: 40,
+    height: 40,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+  },
+  emptyListText: {
+    color: '#77766f',
+    fontSize: 13,
+    paddingVertical: 8,
+  },
+  boughtHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  clearButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  clearButtonText: {
+    color: '#3b742f',
+    fontSize: 13,
+  },
+  catalogList: {
+    gap: 10,
+    paddingBottom: 16,
+  },
+  catalogItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    padding: 14,
+    elevation: 1,
+  },
+  catalogProductName: {
+    flex: 1,
+    minWidth: 0,
+  },
+  catalogProductText: {
+    color: '#4e4d4d',
+    fontSize: 14,
+  },
+  catalogAddButton: {
+    flexShrink: 0,
+    borderRadius: 24,
+    backgroundColor: '#3b742f',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+  },
+  catalogAddButtonDisabled: {
+    backgroundColor: '#e0e1e6',
+  },
+  catalogAddButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+  },
+  catalogAddButtonTextDisabled: {
+    color: '#77766f',
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+});

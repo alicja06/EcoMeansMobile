@@ -1,15 +1,14 @@
-﻿
-import type { ReactNode } from 'react';
+﻿import type { ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import type { CleaningTask } from '@/types';
 import { Check } from 'lucide-react-native';
 import { findRoom } from '@/data/rooms';
 import { dueLabel } from '@/lib/tasks';
+import { AppText } from '@/components/ui/AppText';
 
 interface TaskRowProps {
   task: CleaningTask;
@@ -71,7 +70,8 @@ export function TaskRow({
       </Pressable>
 
       <View style={styles.textContainer}>
-        <Text
+        <AppText
+
           numberOfLines={1}
           style={[
             styles.taskTitle,
@@ -79,14 +79,14 @@ export function TaskRow({
           ]}
         >
           {task.title}
-        </Text>
+        </AppText>
 
-        <Text
+        <AppText
           numberOfLines={1}
           style={styles.details}
         >
           {details}
-        </Text>
+        </AppText>
       </View>
 
       {trailing ? (
@@ -142,8 +142,6 @@ const styles = StyleSheet.create({
   taskTitle: {
     color: '#4e4d4d',
     fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'Sen',
   },
   taskTitleDone: {
     color: '#999999',
@@ -153,7 +151,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: '#88847e',
     fontSize: 12,
-    fontFamily: 'Sen',
   },
   trailing: {
     flexShrink: 0,

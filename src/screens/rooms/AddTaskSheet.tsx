@@ -1,4 +1,13 @@
-import { useState, type FormEvent } from 'react';
+
+import { useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
+
 import type { Frequency, RoomId } from '@/types';
 import { TASK_SUGGESTIONS } from '@/data/initialState';
 import { FREQUENCY_OPTIONS } from '@/lib/tasks';
@@ -6,55 +15,89 @@ import { todayISO } from '@/lib/dates';
 import { useAppStore } from '@/store/AppStoreContext';
 import { useToast } from '@/store/ToastContext';
 import { Sheet } from '@/components/ui/Sheet';
+import { AppText } from '@/components/ui/AppText';
 
 interface AddTaskSheetProps {
   roomId: RoomId;
   onClose: () => void;
 }
 
-const INPUT_CLASS =
-  'w-full rounded-2xl border border-ink-200 bg-white px-4 py-3 text-ink-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100';
-
 export function AddTaskSheet({ roomId, onClose }: AddTaskSheetProps) {
   const { state, addTask } = useAppStore();
   const { showToast } = useToast();
+
   const [title, setTitle] = useState('');
   const [frequency, setFrequency] = useState<Frequency>('weekly');
   const [customInput, setCustomInput] = useState('7');
   const [minutes, setMinutes] = useState('15');
   const [error, setError] = useState<string | null>(null);
 
-  const roomTitles = state.tasks.filter((task) => task.roomId === roomId).map((task) => task.title.toLowerCase());
-  const suggestions = TASK_SUGGESTIONS.filter((suggestion) => !roomTitles.includes(suggestion.toLowerCase()));
+  const roomTitles = state.tasks
+    .filter((task) => task.roomId === roomId)
+    .map((task) => task.title.toLowerCase());
+
+  const suggestions = TASK_SUGGESTIONS.filter(
+    (suggestion) => !roomTitles.includes(suggestion.toLowerCase()),
+  );
+
   const trimmed = title.trim();
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = () => {
     if (!trimmed) {
       setError('Podaj nazwę zadania.');
       return;
     }
+
     if (roomTitles.includes(trimmed.toLowerCase())) {
       setError('Takie zadanie już jest w tym pomieszczeniu.');
       return;
     }
+
     let customDays: number | null = null;
+
     if (frequency === 'custom') {
       const days = Number(customInput);
+
       if (!Number.isInteger(days) || days < 1 || days > 365) {
         setError('Podaj liczbę dni od 1 do 365.');
         return;
       }
+
       customDays = days;
     }
+
     const parsedMinutes = Number(minutes);
-    if (!Number.isInteger(parsedMinutes) || parsedMinutes < 1 || parsedMinutes > 240) {
+
+    if (
+      !Number.isInteger(parsedMinutes) ||
+      parsedMinutes < 1 ||
+      parsedMinutes > 240
+    ) {
       setError('Czas podaj w minutach, od 1 do 240.');
       return;
     }
-    addTask({ roomId, title: trimmed, frequency, customDays, startDate: todayISO(), minutes: parsedMinutes });
+
+    addTask({
+      roomId,
+      title: trimmed,
+      frequency,
+      customDays,
+      startDate: todayISO(),
+      minutes: parsedMinutes,
+    });
+
     showToast(`Dodano: ${trimmed}`);
     onClose();
+  };
+
+  const updateTitle = (value: string) => {
+    setTitle(value);
+    setError(null);
+  };
+
+  const updateMinutes = (value: string) => {
+    setMinutes(value);
+    setError(null);
   };
 
   return (
@@ -62,112 +105,286 @@ export function AddTaskSheet({ roomId, onClose }: AddTaskSheetProps) {
       title="Nowe zadanie"
       onClose={onClose}
       footer={
-        <button
-          type="submit"
-          form="add-task-form"
+        <Pressable
+          onPress={handleSubmit}
           disabled={!trimmed}
-          className="w-full rounded-2xl bg-brand-600 py-3.5 text-sm font-bold text-white shadow-card transition hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-ink-300"
+          accessibilityRole="button"
+          accessibilityLabel="Dodaj zadanie"
+          style={({ pressed }) => [
+            styles.submitButton,
+            !trimmed && styles.submitButtonDisabled,
+            pressed && trimmed && styles.pressed,
+          ]}
         >
-          Dodaj zadanie
-        </button>
+          <AppText style={styles.submitButtonText}>
+            Dodaj zadanie
+          </AppText>
+        </Pressable>
       }
     >
-      <form id="add-task-form" onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-ink-700">Nazwa zadania</span>
-          <input
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.field}>
+          <AppText style={styles.label}>
+            Nazwa zadania
+          </AppText>
+
+          <TextInput
             value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              setError(null);
-            }}
+            onChangeText={updateTitle}
             maxLength={80}
             placeholder="Np. Wyczyścić filtr okapu"
-            className={INPUT_CLASS}
+            placeholderTextColor="#99968F"
+            style={styles.input}
+            accessibilityLabel="Nazwa zadania"
           />
-        </label>
+        </View>
 
         {suggestions.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-ink-700">Podpowiedzi</span>
-            <div className="flex flex-wrap gap-2">
+          <View style={styles.field}>
+            <AppText style={styles.label}>
+              Podpowiedzi
+            </AppText>
+
+            <View style={styles.suggestions}>
               {suggestions.map((suggestion) => (
-                <button
+                <Pressable
                   key={suggestion}
-                  type="button"
-                  onClick={() => {
-                    setTitle(suggestion);
-                    setError(null);
-                  }}
-                  className="rounded-full bg-ink-100 px-3 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-brand-50 hover:text-brand-700"
+                  onPress={() => updateTitle(suggestion)}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.suggestion,
+                    pressed && styles.pressed,
+                  ]}
                 >
-                  {suggestion}
-                </button>
+                  <AppText style={styles.suggestionText}>
+                    {suggestion}
+                  </AppText>
+                </Pressable>
               ))}
-            </div>
-          </div>
+            </View>
+          </View>
         )}
 
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-ink-700">Szacowany czas (minuty)</span>
-          <input
-            type="number"
-            min={1}
-            max={240}
-            value={minutes}
-            onChange={(event) => {
-              setMinutes(event.target.value);
-              setError(null);
-            }}
-            className={INPUT_CLASS}
-          />
-        </label>
+        <View style={styles.field}>
+          <AppText style={styles.label}>
+            Szacowany czas (minuty)
+          </AppText>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-ink-700">Jak często?</span>
-          <div className="grid grid-cols-2 gap-2">
+          <TextInput
+            value={minutes}
+            onChangeText={updateMinutes}
+            keyboardType="number-pad"
+            maxLength={3}
+            placeholder="15"
+            placeholderTextColor="#99968F"
+            style={styles.input}
+            accessibilityLabel="Szacowany czas w minutach"
+          />
+        </View>
+
+        <View style={styles.field}>
+          <AppText style={styles.label}>
+            Jak często?
+          </AppText>
+
+          <View style={styles.frequencyOptions}>
             {FREQUENCY_OPTIONS.map((option) => {
               const active = option.value === frequency;
+
               return (
-                <button
+                <Pressable
                   key={option.value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setFrequency(option.value)}
-                  className={`rounded-2xl border px-3 py-3 text-left text-sm font-semibold transition ${
-                    active ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-ink-200 bg-white text-ink-700 hover:border-ink-300'
-                  }`}
+                  onPress={() => {
+                    setFrequency(option.value);
+                    setError(null);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: active }}
+                  style={({ pressed }) => [
+                    styles.frequencyOption,
+                    active
+                      ? styles.frequencyOptionActive
+                      : styles.frequencyOptionInactive,
+                    pressed && styles.pressed,
+                  ]}
                 >
-                  {option.label}
-                </button>
+                  <AppText
+
+                    style={[
+                      styles.frequencyText,
+                      active && styles.frequencyTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </AppText>
+                </Pressable>
               );
             })}
-          </div>
+          </View>
+
           {frequency === 'custom' && (
-            <label className="mt-2 flex items-center gap-3 text-sm text-ink-700">
-              Co
-              <input
-                type="number"
-                min={1}
-                max={365}
+            <View style={styles.customFrequency}>
+              <AppText style={styles.customLabel}>
+                Co
+              </AppText>
+
+              <TextInput
                 value={customInput}
-                onChange={(event) => {
-                  setCustomInput(event.target.value);
+                onChangeText={(value) => {
+                  setCustomInput(value);
                   setError(null);
                 }}
-                className="w-24 rounded-2xl border border-ink-200 bg-white px-3 py-2.5 text-center text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                keyboardType="number-pad"
+                maxLength={3}
+                style={styles.customInput}
+                accessibilityLabel="Liczba dni między zadaniami"
               />
-              dni
-            </label>
+
+              <AppText style={styles.customLabel}>
+                dni
+              </AppText>
+            </View>
           )}
-        </div>
+        </View>
 
         {error && (
-          <p role="alert" className="rounded-2xl bg-danger-50 px-4 py-3 text-sm text-danger-700">
-            {error}
-          </p>
+          <View
+            style={styles.error}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+          >
+            <AppText style={styles.errorText}>
+              {error}
+            </AppText>
+          </View>
         )}
-      </form>
+      </ScrollView>
     </Sheet>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    gap: 24,
+    paddingBottom: 12,
+  },
+  field: {
+    gap: 8,
+  },
+  label: {
+    color: '#4e4d4d',
+    fontSize: 14,
+  },
+  input: {
+    width: '100%',
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: '#dedbd4',
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: '#4e4d4d',
+    fontFamily: 'Sen',
+    fontSize: 14,
+  },
+  suggestions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  suggestion: {
+    borderRadius: 24,
+    backgroundColor: '#f0f0f3',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  suggestionText: {
+    color: '#4e4d4d',
+    fontSize: 12,
+  },
+  frequencyOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  frequencyOption: {
+    width: '48%',
+    minHeight: 48,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  frequencyOptionActive: {
+    borderColor: '#3b742f',
+    backgroundColor: '#f0f6ed',
+  },
+  frequencyOptionInactive: {
+    borderColor: '#dedbd4',
+    backgroundColor: '#ffffff',
+  },
+  frequencyText: {
+    color: '#4e4d4d',
+    fontSize: 13,
+  },
+  frequencyTextActive: {
+    color: '#3b742f',
+  },
+  customFrequency: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  customLabel: {
+    color: '#4e4d4d',
+    fontSize: 14,
+  },
+  customInput: {
+    width: 96,
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: '#dedbd4',
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 12,
+    textAlign: 'center',
+    color: '#4e4d4d',
+    fontFamily: 'Sen',
+    fontSize: 14,
+  },
+  error: {
+    borderRadius: 16,
+    backgroundColor: '#fcebea',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  errorText: {
+    color: '#a8322b',
+    fontSize: 13,
+  },
+  submitButton: {
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#3b742f',
+    paddingVertical: 12,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#c9c9c9',
+  },
+  submitButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+});

@@ -4,12 +4,12 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
 import { Redirect, useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import { AppText } from "@/components/ui/AppText";
 
 export default function AuthCallbackScreen() {
   const params = useLocalSearchParams<{
@@ -18,7 +18,8 @@ export default function AuthCallbackScreen() {
     error?: string;
     error_description?: string;
   }>();
-    console.log("[AUTH CALLBACK ROUTE]", params);
+
+  console.log("[AUTH CALLBACK ROUTE]", params);
 
   const [status, setStatus] = useState<
     "loading" | "success" | "recovery" | "error"
@@ -121,10 +122,13 @@ export default function AuthCallbackScreen() {
   if (status === "recovery") {
     return (
       <View style={styles.container}>
-        <Text style={styles.heading}>Ustaw nowe hasło</Text>
-        <Text style={styles.subtitle}>
+        <AppText style={styles.heading}>
+          Ustaw nowe hasło
+        </AppText>
+
+        <AppText style={styles.subtitle}>
           Wybierz nowe hasło do swojego konta EcoMeans.
-        </Text>
+        </AppText>
 
         <TextInput
           value={password}
@@ -147,7 +151,7 @@ export default function AuthCallbackScreen() {
         />
 
         {errorMessage ? (
-          <Text style={styles.error}>{errorMessage}</Text>
+          <AppText style={styles.error}>{errorMessage}</AppText>
         ) : null}
 
         <Pressable
@@ -155,9 +159,9 @@ export default function AuthCallbackScreen() {
           disabled={saving}
           style={[styles.button, saving && styles.disabled]}
         >
-          <Text style={styles.buttonText}>
+          <AppText style={styles.buttonText}>
             {saving ? "Zapisywanie..." : "Zapisz nowe hasło"}
-          </Text>
+          </AppText>
         </Pressable>
       </View>
     );
@@ -166,7 +170,7 @@ export default function AuthCallbackScreen() {
   if (status === "error") {
     return (
       <View style={styles.container}>
-        <Text style={styles.error}>{errorMessage}</Text>
+        <AppText style={styles.error}>{errorMessage}</AppText>
       </View>
     );
   }
@@ -174,7 +178,9 @@ export default function AuthCallbackScreen() {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#3b742f" />
-      <Text style={styles.subtitle}>Przygotowujemy Twoje konto...</Text>
+      <AppText style={styles.subtitle}>
+        Przygotowujemy Twoje konto...
+      </AppText>
     </View>
   );
 }
@@ -191,13 +197,11 @@ const styles = StyleSheet.create({
     color: "#3b742f",
     fontSize: 26,
     textAlign: "center",
-    fontFamily: "Sen",
   },
   subtitle: {
     color: "#4e4d4d",
     fontSize: 15,
     textAlign: "center",
-    fontFamily: "Sen",
   },
   input: {
     backgroundColor: "#ffffff",
@@ -214,7 +218,6 @@ const styles = StyleSheet.create({
     color: "#b91c1c",
     fontSize: 14,
     textAlign: "center",
-    fontFamily: "Sen",
   },
   button: {
     backgroundColor: "#3b742f",
@@ -225,8 +228,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "700",
-    fontFamily: "Sen",
   },
   disabled: {
     opacity: 0.6,

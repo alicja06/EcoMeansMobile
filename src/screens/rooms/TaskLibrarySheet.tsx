@@ -1,4 +1,11 @@
-﻿import { Check } from 'lucide-react-native';
+﻿import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Check } from 'lucide-react-native';
+
 import { findRoom } from '@/data/rooms';
 import { TASK_LIBRARY } from '@/data/taskLibrary';
 import { useAppStore } from '@/store/AppStoreContext';
@@ -8,44 +15,96 @@ import { frequencyLabel } from '@/lib/tasks';
 import { Sheet } from '@/components/ui/Sheet';
 import { DemoNotice } from '@/components/ui/controls';
 
-export function TaskLibrarySheet({ onClose }: { onClose: () => void }) {
+export function TaskLibrarySheet({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
   const { state, addTask } = useAppStore();
   const { showToast } = useToast();
   const today = todayISO();
 
-  const isAdded = (libraryId: string, roomId: string, title: string) =>
-    state.tasks.some((task) => task.libraryId === libraryId || (task.roomId === roomId && task.title === title));
+  const isAdded = (
+    libraryId: string,
+    roomId: string,
+    title: string,
+  ) =>
+    state.tasks.some(
+      (task) =>
+        task.libraryId === libraryId ||
+        (task.roomId === roomId && task.title === title),
+    );
 
   const groups = [
-    { id: 'kitchen', name: 'Kuchnia', tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('k-')) },
-    { id: 'bathroom', name: 'Ĺazienka', tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('b-')) },
-    { id: 'appliances', name: 'SprzÄ™ty AGD', tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('a-')) },
-    { id: 'other', name: 'PozostaĹ‚e pomieszczenia', tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('o-')) },
+    {
+      id: 'kitchen',
+      name: 'Kuchnia',
+      tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('k-')),
+    },
+    {
+      id: 'bathroom',
+      name: 'Łazienka',
+      tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('b-')),
+    },
+    {
+      id: 'appliances',
+      name: 'Sprzęty AGD',
+      tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('a-')),
+    },
+    {
+      id: 'other',
+      name: 'Pozostałe pomieszczenia',
+      tasks: TASK_LIBRARY.filter((item) => item.id.startsWith('o-')),
+    },
   ];
 
   return (
-    <Sheet title="Biblioteka czynnoĹ›ci" onClose={onClose}>
-      <div className="flex flex-col gap-6">
-        <DemoNotice text="CzÄ™stotliwoĹ›ci i czasy sÄ… przykĹ‚adowymi wartoĹ›ciami startowymi. MoĹĽesz je zmieniÄ‡ po dodaniu zadania." />
+    <Sheet
+      title="Biblioteka czynności"
+      onClose={onClose}
+    >
+      <View style={styles.container}>
+        <DemoNotice text="Częstotliwości i czasy są przykładowymi wartościami startowymi. Możesz je zmienić po dodaniu zadania." />
+
         {groups.map((group) => (
-          <section key={group.id}>
-            <h3 className="mb-2 text-sm font-bold text-ink-700">{group.name}</h3>
-            <ul className="flex flex-col gap-2">
+          <View key={group.id} style={styles.group}>
+            <Text style={styles.groupTitle}>
+              {group.name}
+            </Text>
+
+            <View style={styles.taskList}>
               {group.tasks.map((item) => {
-                const added = isAdded(item.id, item.roomId, item.title);
+                const added = isAdded(
+                  item.id,
+                  item.roomId,
+                  item.title,
+                );
+
                 return (
-                  <li key={item.id} className="flex items-center gap-3 rounded-2xl bg-white p-3.5 shadow-card">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-ink-900">{item.title}</p>
-                      <p className="mt-0.5 text-xs text-ink-500">
-                        {frequencyLabel(item.frequency, item.customDays, item.scheduleNote)} Â· ok. {item.minutes} min Â·{' '}
+                  <View
+                    key={item.id}
+                    style={styles.taskCard}
+                  >
+                    <View style={styles.taskInfo}>
+                      <Text style={styles.taskTitle}>
+                        {item.title}
+                      </Text>
+
+                      <Text style={styles.taskDetails}>
+                        {frequencyLabel(
+                          item.frequency,
+                          item.customDays,
+                          item.scheduleNote,
+                        )}
+                        {' · '}ok. {item.minutes} min
+                        {' · '}
                         {findRoom(item.roomId)?.name}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
+                      </Text>
+                    </View>
+
+                    <Pressable
                       disabled={added}
-                      onClick={() => {
+                      onPress={() => {
                         addTask({
                           roomId: item.roomId,
                           title: item.title,
@@ -56,23 +115,116 @@ export function TaskLibrarySheet({ onClose }: { onClose: () => void }) {
                           libraryId: item.id,
                           scheduleNote: item.scheduleNote,
                         });
+
                         showToast(`Dodano: ${item.title}`);
                       }}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
-                        added ? 'bg-brand-50 text-brand-700' : 'bg-brand-600 text-white hover:bg-brand-700 active:scale-95'
-                      }`}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: added }}
+                      style={({ pressed }) => [
+                        styles.addButton,
+                        added
+                          ? styles.addButtonAdded
+                          : styles.addButtonActive,
+                        pressed && !added && styles.pressed,
+                      ]}
                     >
-                      {added && <Check size={14} strokeWidth={3} />}
-                      {added ? 'Dodane' : 'Dodaj'}
-                    </button>
-                  </li>
+                      {added ? (
+                        <Check
+                          size={14}
+                          color="#3b742f"
+                          strokeWidth={3}
+                        />
+                      ) : null}
+
+                      <Text
+                        style={[
+                          styles.addButtonText,
+                          added
+                            ? styles.addButtonTextAdded
+                            : styles.addButtonTextActive,
+                        ]}
+                      >
+                        {added ? 'Dodane' : 'Dodaj'}
+                      </Text>
+                    </Pressable>
+                  </View>
                 );
               })}
-            </ul>
-          </section>
+            </View>
+          </View>
         ))}
-      </div>
+      </View>
     </Sheet>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    gap: 24,
+    paddingBottom: 12,
+  },
+  group: {
+    gap: 10,
+  },
+  groupTitle: {
+    color: '#4e4d4d',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  taskList: {
+    gap: 8,
+  },
+  taskCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    elevation: 2,
+  },
+  taskInfo: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
+  },
+  taskTitle: {
+    color: '#4e4d4d',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  taskDetails: {
+    color: '#77766f',
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    flexShrink: 0,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+  },
+  addButtonActive: {
+    backgroundColor: '#3b742f',
+  },
+  addButtonAdded: {
+    backgroundColor: '#edf5e9',
+  },
+  addButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  addButtonTextActive: {
+    color: '#ffffff',
+  },
+  addButtonTextAdded: {
+    color: '#3b742f',
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+});

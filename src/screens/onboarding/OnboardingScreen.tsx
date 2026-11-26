@@ -1,5 +1,4 @@
-
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -8,11 +7,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { AppText } from "@/components/ui/AppText";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import type {
   ApplianceId,
@@ -25,64 +24,64 @@ import type {
   HouseholdSize,
   RoomId,
   TimeBudget,
-} from '@/types';
+} from "@/types";
 
 import {
   APPLIANCE_OPTIONS,
   DAY_PART_OPTIONS,
   HOUSEHOLD_OPTIONS,
   TIME_BUDGET_OPTIONS,
-} from '@/data/home';
-import { ROOMS } from '@/data/rooms';
-import { useAppStore } from '@/store/AppStoreContext';
-import { todayISO, formatShortDate } from '@/lib/dates';
-import { createId } from '@/lib/ids';
+} from "@/data/home";
+import { ROOMS } from "@/data/rooms";
+import { useAppStore } from "@/store/AppStoreContext";
+import { todayISO, formatShortDate } from "@/lib/dates";
+import { createId } from "@/lib/ids";
 import {
   buildSuggestedTasks,
   generateEditedPlan,
   getTaskPreviewGroup,
-} from '@/lib/schedule';
-import { useNavigation } from '@/store/NavigationContext';
-import { useHousehold } from '@/auth/HouseholdContext';
+} from "@/lib/schedule";
+import { useNavigation } from "@/store/NavigationContext";
+import { useHousehold } from "@/auth/HouseholdContext";
 
 const STAGES = [1, 1, 2, 3, 4];
 
 const FREQUENCY_OPTIONS = [
-  { value: 'daily', label: 'Codziennie' },
-  { value: '2days', label: 'Co 2 dni' },
-  { value: '3days', label: 'Co 3 dni' },
-  { value: 'weekly', label: 'Co tydzień' },
-  { value: 'biweekly', label: 'Co 2 tygodnie' },
-  { value: 'monthly', label: 'Co miesiąc' },
-  { value: 'quarterly', label: 'Co 3 miesiące' },
-  { value: 'custom', label: 'Niestandardowa' },
+  { value: "daily", label: "Codziennie" },
+  { value: "2days", label: "Co 2 dni" },
+  { value: "3days", label: "Co 3 dni" },
+  { value: "weekly", label: "Co tydzień" },
+  { value: "biweekly", label: "Co 2 tygodnie" },
+  { value: "monthly", label: "Co miesiąc" },
+  { value: "quarterly", label: "Co 3 miesiące" },
+  { value: "custom", label: "Niestandardowa" },
 ];
 
 const WEEKDAYS = [
-  { id: 1, label: 'Pn' },
-  { id: 2, label: 'Wt' },
-  { id: 3, label: 'Śr' },
-  { id: 4, label: 'Cz' },
-  { id: 5, label: 'Pt' },
-  { id: 6, label: 'Sb' },
-  { id: 0, label: 'Nd' },
+  { id: 1, label: "Pn" },
+  { id: 2, label: "Wt" },
+  { id: 3, label: "Śr" },
+  { id: 4, label: "Cz" },
+  { id: 5, label: "Pt" },
+  { id: 6, label: "Sb" },
+  { id: 0, label: "Nd" },
 ];
 
 const FULL_WEEKDAYS = [
-  'niedziela',
-  'poniedziałek',
-  'wtorek',
-  'środa',
-  'czwartek',
-  'piątek',
-  'sobota',
+  "niedziela",
+  "poniedziałek",
+  "wtorek",
+  "środa",
+  "czwartek",
+  "piątek",
+  "sobota",
 ];
 
 function getFrequencyValue(task: CleaningTask): string {
-  if (task.frequency === 'custom') {
-    if (task.customRule) return 'custom-current';
-    if (task.customDays === 2) return '2days';
-    if (task.customDays === 3) return '3days';
+  if (task.frequency === "custom") {
+    if (task.customRule) return "custom-current";
+    if (task.customDays === 2) return "2days";
+    if (task.customDays === 3) return "3days";
   }
 
   return task.frequency;
@@ -111,45 +110,45 @@ function getPlural(
 }
 
 function getCustomFrequencyLabel(rule: CustomFrequencyRule): string {
-  if (rule.unit === 'days') {
+  if (rule.unit === "days") {
     return `Co ${rule.interval} ${getPlural(
       rule.interval,
-      'dzień',
-      'dni',
-      'dni',
+      "dzień",
+      "dni",
+      "dni",
     )}`;
   }
 
-  if (rule.unit === 'weeks') {
+  if (rule.unit === "weeks") {
     const selectedDays = [1, 2, 3, 4, 5, 6, 0]
       .filter((day) => rule.weekdays.includes(day))
       .map((day) => FULL_WEEKDAYS[day]);
 
     return `Co ${rule.interval} ${getPlural(
       rule.interval,
-      'tydzień',
-      'tygodnie',
-      'tygodni',
-    )}: ${selectedDays.join(', ')}`;
+      "tydzień",
+      "tygodnie",
+      "tygodni",
+    )}: ${selectedDays.join(", ")}`;
   }
 
   const monthInterval = `Co ${rule.interval} ${getPlural(
     rule.interval,
-    'miesiąc',
-    'miesiące',
-    'miesięcy',
+    "miesiąc",
+    "miesiące",
+    "miesięcy",
   )}`;
 
-  if (rule.monthlyPattern.type === 'dayOfMonth') {
+  if (rule.monthlyPattern.type === "dayOfMonth") {
     return `${monthInterval} – ${rule.monthlyPattern.day}. dzień miesiąca`;
   }
 
   const ordinals: Record<number, string> = {
-    1: 'pierwszy',
-    2: 'drugi',
-    3: 'trzeci',
-    4: 'czwarty',
-    [-1]: 'ostatni',
+    1: "pierwszy",
+    2: "drugi",
+    3: "trzeci",
+    4: "czwarty",
+    [-1]: "ostatni",
   };
 
   return `${monthInterval} – ${ordinals[rule.monthlyPattern.ordinal]} ${FULL_WEEKDAYS[rule.monthlyPattern.weekday]}`;
@@ -175,9 +174,9 @@ function ChoiceButton({
         pressed && styles.pressed,
       ]}
     >
-      <Text style={styles.choiceLabel}>{label}</Text>
-      {detail ? <Text style={styles.choiceDetail}>{detail}</Text> : null}
-      {selected ? <Text style={styles.choiceCheck}>✓</Text> : null}
+      <AppText style={styles.choiceLabel}>{label}</AppText>
+      {detail ? <AppText style={styles.choiceDetail}>{detail}</AppText> : null}
+      {selected ? <AppText style={styles.choiceCheck}>✓</AppText> : null}
     </Pressable>
   );
 }
@@ -207,20 +206,20 @@ function ActionButton({
         pressed && !disabled && styles.pressed,
       ]}
     >
-      <Text
+      <AppText
         style={[
           styles.actionButtonText,
           secondary && styles.secondaryButtonText,
         ]}
       >
         {label}
-      </Text>
+      </AppText>
     </Pressable>
   );
 }
 
 function FieldLabel({ children }: { children: string }) {
-  return <Text style={styles.fieldLabel}>{children}</Text>;
+  return <AppText style={styles.fieldLabel}>{children}</AppText>;
 }
 
 export function OnboardingScreen() {
@@ -233,11 +232,11 @@ export function OnboardingScreen() {
   const [draft, setDraft] = useState<HomeProfile>(() => {
     const home = state.home;
     const places = home.places.filter(
-      (id) => id !== 'toilet' && id !== 'other',
+      (id) => id !== "toilet" && id !== "other",
     );
 
-    if (home.places.includes('toilet') && !places.includes('bathroom')) {
-      places.push('bathroom');
+    if (home.places.includes("toilet") && !places.includes("bathroom")) {
+      places.push("bathroom");
     }
 
     return {
@@ -249,19 +248,17 @@ export function OnboardingScreen() {
   });
 
   const [excluded, setExcluded] = useState<string[]>(
-    isEditingPlan ? state.excludedLibraryTaskIds ?? [] : [],
+    isEditingPlan ? (state.excludedLibraryTaskIds ?? []) : [],
   );
 
   const [suggestedTasks, setSuggestedTasks] = useState<CleaningTask[]>(
-    isEditingPlan
-      ? state.tasks.filter((task) => task.libraryId !== null)
-      : [],
+    isEditingPlan ? state.tasks.filter((task) => task.libraryId !== null) : [],
   );
 
   const [customTasks, setCustomTasks] = useState<CleaningTask[]>(
     isEditingPlan
       ? state.tasks.filter(
-          (task) => task.libraryId === null && task.source === 'plan',
+          (task) => task.libraryId === null && task.source === "plan",
         )
       : [],
   );
@@ -273,18 +270,17 @@ export function OnboardingScreen() {
   const [customFrequencyTask, setCustomFrequencyTask] =
     useState<CleaningTask | null>(null);
 
-  const [customRuleDraft, setCustomRuleDraft] =
-    useState<CustomFrequencyRule>({
-      unit: 'days',
-      interval: 1,
-    });
+  const [customRuleDraft, setCustomRuleDraft] = useState<CustomFrequencyRule>({
+    unit: "days",
+    interval: 1,
+  });
 
-  const [customTitle, setCustomTitle] = useState('');
+  const [customTitle, setCustomTitle] = useState("");
   const [addingToRoom, setAddingToRoom] = useState<RoomId | null>(null);
-  const [customRoomName, setCustomRoomName] = useState('');
-  const [customApplianceName, setCustomApplianceName] = useState('');
+  const [customRoomName, setCustomRoomName] = useState("");
+  const [customApplianceName, setCustomApplianceName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [saveError, setSaveError] = useState("");
 
   const today = todayISO();
 
@@ -309,20 +305,16 @@ export function OnboardingScreen() {
 
   const selectableRooms = useMemo(
     () => [
-      ...ROOMS.filter(
-        (room) => room.id !== 'toilet' && room.id !== 'other',
-      ),
+      ...ROOMS.filter((room) => room.id !== "toilet" && room.id !== "other"),
       ...(draft.customRooms ?? []),
     ],
     [draft.customRooms],
   );
 
   const getRoomName = (roomId: RoomId): string => {
-    if (roomId === 'toilet') return 'Łazienka';
+    if (roomId === "toilet") return "Łazienka";
 
-    return (
-      selectableRooms.find((room) => room.id === roomId)?.name ?? 'Dom'
-    );
+    return selectableRooms.find((room) => room.id === roomId)?.name ?? "Dom";
   };
 
   const customApplianceTaskIds = new Set(
@@ -339,13 +331,9 @@ export function OnboardingScreen() {
       id: room.id,
       name: room.name,
       tasks: previewTasks.filter((task) => {
-        const taskRoomId =
-          task.roomId === 'toilet' ? 'bathroom' : task.roomId;
+        const taskRoomId = task.roomId === "toilet" ? "bathroom" : task.roomId;
 
-        return (
-          taskRoomId === room.id &&
-          !customApplianceTaskIds.has(task.id)
-        );
+        return taskRoomId === room.id && !customApplianceTaskIds.has(task.id);
       }),
     }));
 
@@ -356,8 +344,7 @@ export function OnboardingScreen() {
   const remainingTasks = previewTasks.filter((task) => {
     if (customApplianceTaskIds.has(task.id)) return false;
 
-    const taskRoomId =
-      task.roomId === 'toilet' ? 'bathroom' : task.roomId;
+    const taskRoomId = task.roomId === "toilet" ? "bathroom" : task.roomId;
 
     return !selectedRoomIds.has(taskRoomId);
   });
@@ -367,7 +354,7 @@ export function OnboardingScreen() {
   };
 
   const toggleList = <T extends string>(
-    key: 'places' | 'appliances' | 'dayParts',
+    key: "places" | "appliances" | "dayParts",
     id: T,
   ) => {
     setDraft((current) => {
@@ -380,10 +367,9 @@ export function OnboardingScreen() {
     });
   };
 
-  const togglePlace = (id: RoomId) => toggleList('places', id);
-  const toggleAppliance = (id: ApplianceId) =>
-    toggleList('appliances', id);
-  const toggleDayPart = (id: DayPart) => toggleList('dayParts', id);
+  const togglePlace = (id: RoomId) => toggleList("places", id);
+  const toggleAppliance = (id: ApplianceId) => toggleList("appliances", id);
+  const toggleDayPart = (id: DayPart) => toggleList("dayParts", id);
 
   const addCustomRoom = () => {
     const name = customRoomName.trim();
@@ -407,7 +393,7 @@ export function OnboardingScreen() {
       places: [...current.places, room.id],
     }));
 
-    setCustomRoomName('');
+    setCustomRoomName("");
   };
 
   const addCustomAppliance = () => {
@@ -428,13 +414,10 @@ export function OnboardingScreen() {
 
     setDraft((current) => ({
       ...current,
-      customAppliances: [
-        ...(current.customAppliances ?? []),
-        appliance,
-      ],
+      customAppliances: [...(current.customAppliances ?? []), appliance],
     }));
 
-    setCustomApplianceName('');
+    setCustomApplianceName("");
   };
 
   const removeCustomAppliance = (applianceId: string) => {
@@ -447,13 +430,9 @@ export function OnboardingScreen() {
 
     const taskId = `custom-appliance-${applianceId}`;
 
-    setCustomTasks((current) =>
-      current.filter((task) => task.id !== taskId),
-    );
+    setCustomTasks((current) => current.filter((task) => task.id !== taskId));
 
-    setRemovedTasks((current) =>
-      current.filter((task) => task.id !== taskId),
-    );
+    setRemovedTasks((current) => current.filter((task) => task.id !== taskId));
   };
 
   const canContinue =
@@ -475,7 +454,7 @@ export function OnboardingScreen() {
         id: createId(),
         roomId,
         title,
-        frequency: 'weekly',
+        frequency: "weekly",
         customDays: null,
         dueDate: today,
         lastDoneDate: null,
@@ -484,18 +463,15 @@ export function OnboardingScreen() {
         enabled: true,
         libraryId: null,
         scheduleNote: null,
-        source: 'plan',
+        source: "plan",
       },
     ]);
 
-    setCustomTitle('');
+    setCustomTitle("");
     setAddingToRoom(null);
   };
 
-  const updateTask = (
-    taskId: string,
-    changes: Partial<CleaningTask>,
-  ) => {
+  const updateTask = (taskId: string, changes: Partial<CleaningTask>) => {
     setSuggestedTasks((current) =>
       current.map((task) =>
         task.id === taskId ? { ...task, ...changes } : task,
@@ -514,29 +490,29 @@ export function OnboardingScreen() {
 
     setCustomRuleDraft(
       task.customRule ?? {
-        unit: 'days',
+        unit: "days",
         interval: 1,
       },
     );
   };
 
   const changeFrequency = (task: CleaningTask, value: string) => {
-    if (value === 'custom') {
+    if (value === "custom") {
       openCustomFrequency(task);
       return;
     }
 
-    if (value === '2days' || value === '3days') {
+    if (value === "2days" || value === "3days") {
       updateTask(task.id, {
-        frequency: 'custom',
-        customDays: Number(value.replace('days', '')),
+        frequency: "custom",
+        customDays: Number(value.replace("days", "")),
         customRule: null,
       });
       return;
     }
 
     updateTask(task.id, {
-      frequency: value as CleaningTask['frequency'],
+      frequency: value as CleaningTask["frequency"],
       customDays: null,
       customRule: null,
     });
@@ -560,14 +536,12 @@ export function OnboardingScreen() {
       current.filter((item) => item.id !== task.id),
     );
 
-    setCustomTasks((current) =>
-      current.filter((item) => item.id !== task.id),
-    );
+    setCustomTasks((current) => current.filter((item) => item.id !== task.id));
   };
 
   const toggleCustomWeekday = (day: number) => {
     setCustomRuleDraft((current) => {
-      if (current.unit !== 'weeks') return current;
+      if (current.unit !== "weeks") return current;
 
       const weekdays = current.weekdays.includes(day)
         ? current.weekdays.filter((item) => item !== day)
@@ -586,7 +560,7 @@ export function OnboardingScreen() {
     );
 
     updateTask(customFrequencyTask.id, {
-      frequency: 'custom',
+      frequency: "custom",
       customDays: null,
       customRule: {
         ...customRuleDraft,
@@ -609,7 +583,7 @@ export function OnboardingScreen() {
     if (saving) return;
 
     setSaving(true);
-    setSaveError('');
+    setSaveError("");
 
     try {
       const saved = await acceptPlan(plannedTasks, draft, excluded);
@@ -625,7 +599,7 @@ export function OnboardingScreen() {
       setSaveError(
         error instanceof Error
           ? error.message
-          : 'Nie udało się zapisać planu. Spróbuj ponownie.',
+          : "Nie udało się zapisać planu. Spróbuj ponownie.",
       );
     } finally {
       setSaving(false);
@@ -635,17 +609,10 @@ export function OnboardingScreen() {
   const handleNext = () => {
     if (step === 4) {
       const allExcluded = Array.from(
-        new Set([
-          ...(state.excludedLibraryTaskIds ?? []),
-          ...excluded,
-        ]),
+        new Set([...(state.excludedLibraryTaskIds ?? []), ...excluded]),
       );
 
-      const freshSuggestions = buildSuggestedTasks(
-        draft,
-        today,
-        allExcluded,
-      );
+      const freshSuggestions = buildSuggestedTasks(draft, today, allExcluded);
 
       setSuggestedTasks((current) => {
         const currentByLibraryId = new Map(
@@ -655,9 +622,7 @@ export function OnboardingScreen() {
         );
 
         return freshSuggestions.map((suggestion) => {
-          const existing = currentByLibraryId.get(
-            suggestion.libraryId!,
-          );
+          const existing = currentByLibraryId.get(suggestion.libraryId!);
 
           if (!existing) return suggestion;
 
@@ -670,18 +635,16 @@ export function OnboardingScreen() {
       });
 
       const applianceRoom =
-        draft.places.find((id) => id === 'utility') ??
+        draft.places.find((id) => id === "utility") ??
         draft.places[0] ??
-        'other';
+        "other";
 
-      const activeApplianceTasks = (
-        draft.customAppliances ?? []
-      ).map(
+      const activeApplianceTasks = (draft.customAppliances ?? []).map(
         (appliance): CleaningTask => ({
           id: `custom-appliance-${appliance.id}`,
           roomId: applianceRoom,
           title: `Czyszczenie: ${appliance.name}`,
-          frequency: 'quarterly',
+          frequency: "quarterly",
           customDays: null,
           dueDate: today,
           lastDoneDate: null,
@@ -690,40 +653,32 @@ export function OnboardingScreen() {
           enabled: true,
           libraryId: null,
           scheduleNote:
-            'Przykładowa częstotliwość. Dostosuj ją do instrukcji producenta urządzenia.',
-          source: 'plan',
+            "Przykładowa częstotliwość. Dostosuj ją do instrukcji producenta urządzenia.",
+          source: "plan",
         }),
       );
 
-      const activeIds = new Set(
-        activeApplianceTasks.map((task) => task.id),
-      );
+      const activeIds = new Set(activeApplianceTasks.map((task) => task.id));
 
-      const removedIds = new Set(
-        removedTasks.map((task) => task.id),
-      );
+      const removedIds = new Set(removedTasks.map((task) => task.id));
 
       setCustomTasks((current) => {
-        const existingIds = new Set(
-          current.map((task) => task.id),
-        );
+        const existingIds = new Set(current.map((task) => task.id));
 
         const retained = current
           .filter(
             (task) =>
-              !task.id.startsWith('custom-appliance-') ||
+              !task.id.startsWith("custom-appliance-") ||
               activeIds.has(task.id),
           )
           .map((task) =>
-            task.id.startsWith('custom-appliance-')
+            task.id.startsWith("custom-appliance-")
               ? { ...task, roomId: applianceRoom }
               : task,
           );
 
         const missing = activeApplianceTasks.filter(
-          (task) =>
-            !existingIds.has(task.id) &&
-            !removedIds.has(task.id),
+          (task) => !existingIds.has(task.id) && !removedIds.has(task.id),
         );
 
         return [...retained, ...missing];
@@ -738,19 +693,14 @@ export function OnboardingScreen() {
       <View style={styles.taskTitleRow}>
         <TextInput
           value={task.title}
-          onChangeText={(value) =>
-            updateTask(task.id, { title: value })
-          }
+          onChangeText={(value) => updateTask(task.id, { title: value })}
           accessibilityLabel="Nazwa czynności"
           style={styles.taskTitleInput}
           placeholder="Nazwa czynności"
         />
 
-        <Pressable
-          onPress={() => removeTask(task)}
-          style={styles.removeButton}
-        >
-          <Text style={styles.removeButtonText}>Usuń</Text>
+        <Pressable onPress={() => removeTask(task)} style={styles.removeButton}>
+          <AppText style={styles.removeButtonText}>Usuń</AppText>
         </Pressable>
       </View>
 
@@ -760,8 +710,8 @@ export function OnboardingScreen() {
         {FREQUENCY_OPTIONS.map((option) => {
           const selected =
             getFrequencyValue(task) === option.value ||
-            (option.value === 'custom' &&
-              task.frequency === 'custom' &&
+            (option.value === "custom" &&
+              task.frequency === "custom" &&
               task.customRule !== null &&
               task.customRule !== undefined);
 
@@ -774,24 +724,24 @@ export function OnboardingScreen() {
                 selected && styles.frequencyOptionSelected,
               ]}
             >
-              <Text
+              <AppText
                 style={[
                   styles.frequencyText,
                   selected && styles.frequencyTextSelected,
                 ]}
               >
-                {option.value === 'custom' &&
-                task.frequency === 'custom' &&
+                {option.value === "custom" &&
+                task.frequency === "custom" &&
                 task.customRule
                   ? getCustomFrequencyLabel(task.customRule)
                   : option.label}
-              </Text>
+              </AppText>
             </Pressable>
           );
         })}
       </View>
 
-      {task.frequency === 'custom' && task.customRule ? (
+      {task.frequency === "custom" && task.customRule ? (
         <ActionButton
           label="Edytuj częstotliwość"
           onPress={() => openCustomFrequency(task)}
@@ -803,13 +753,13 @@ export function OnboardingScreen() {
   );
 
   const renderSectionTitle = (title: string) => (
-    <Text style={styles.sectionTitle}>{title}</Text>
+    <AppText style={styles.sectionTitle}>{title}</AppText>
   );
 
   const renderHeading = (title: string, description: string) => (
     <View style={styles.headingBlock}>
-      <Text style={styles.heading}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
+      <AppText style={styles.heading}>{title}</AppText>
+      <AppText style={styles.description}>{description}</AppText>
     </View>
   );
 
@@ -818,8 +768,8 @@ export function OnboardingScreen() {
       return (
         <View>
           {renderHeading(
-            'Kto mieszka w domu?',
-            'Od tego zależy, jak gęsto ułożę codzienne czynności. To punkt startowy, nie ocena.',
+            "Kto mieszka w domu?",
+            "Od tego zależy, jak gęsto ułożę codzienne czynności. To punkt startowy, nie ocena.",
           )}
 
           <View style={styles.options}>
@@ -832,8 +782,7 @@ export function OnboardingScreen() {
                   patch({
                     household: option.id as HouseholdSize,
                     smallChildren:
-                      option.id === 'family' &&
-                      draft.smallChildren === null
+                      option.id === "family" && draft.smallChildren === null
                         ? true
                         : draft.smallChildren,
                   })
@@ -849,11 +798,11 @@ export function OnboardingScreen() {
       return (
         <View>
           {renderHeading(
-            'Jeszcze kilka rzeczy o domu',
-            'Małe dzieci, zwierzęta i szczególne potrzeby zmieniają częstotliwość, ale nie dokładają obowiązków na siłę.',
+            "Jeszcze kilka rzeczy o domu",
+            "Małe dzieci, zwierzęta i szczególne potrzeby zmieniają częstotliwość, ale nie dokładają obowiązków na siłę.",
           )}
 
-          {renderSectionTitle('Czy w domu są małe dzieci?')}
+          {renderSectionTitle("Czy w domu są małe dzieci?")}
 
           <View style={styles.twoColumns}>
             <ChoiceButton
@@ -868,7 +817,7 @@ export function OnboardingScreen() {
             />
           </View>
 
-          {renderSectionTitle('Czy mieszkają z Tobą zwierzęta?')}
+          {renderSectionTitle("Czy mieszkają z Tobą zwierzęta?")}
 
           <TextInput
             value={draft.pets}
@@ -878,9 +827,7 @@ export function OnboardingScreen() {
             style={styles.textInput}
           />
 
-          {renderSectionTitle(
-            'Szczególne potrzeby dotyczące czystości',
-          )}
+          {renderSectionTitle("Szczególne potrzeby dotyczące czystości")}
 
           <TextInput
             value={draft.specialNeeds}
@@ -900,11 +847,11 @@ export function OnboardingScreen() {
       return (
         <View>
           {renderHeading(
-            'Jak wygląda Twój dom?',
-            'Zaznacz pomieszczenia i sprzęty, które naprawdę masz. Później możesz zmienić ten wybór, dodać własne pomieszczenia lub usunąć niepotrzebne.',
+            "Jak wygląda Twój dom?",
+            "Zaznacz pomieszczenia i sprzęty, które naprawdę masz. Później możesz zmienić ten wybór, dodać własne pomieszczenia lub usunąć niepotrzebne.",
           )}
 
-          {renderSectionTitle('Pomieszczenia')}
+          {renderSectionTitle("Pomieszczenia")}
 
           <View style={styles.options}>
             {selectableRooms.map((room) => (
@@ -936,9 +883,7 @@ export function OnboardingScreen() {
             />
           </View>
 
-          {renderSectionTitle(
-            'Urządzenia do okresowego czyszczenia',
-          )}
+          {renderSectionTitle("Urządzenia do okresowego czyszczenia")}
 
           <View style={styles.options}>
             {APPLIANCE_OPTIONS.map((item) => (
@@ -952,14 +897,14 @@ export function OnboardingScreen() {
 
             {(draft.customAppliances ?? []).map((item) => (
               <View key={item.id} style={styles.customApplianceRow}>
-                <Text style={styles.customApplianceName}>
+                <AppText style={styles.customApplianceName}>
                   {item.name}
-                </Text>
+                </AppText>
                 <Pressable
                   onPress={() => removeCustomAppliance(item.id)}
                   style={styles.removeButton}
                 >
-                  <Text style={styles.removeButtonText}>Usuń</Text>
+                  <AppText style={styles.removeButtonText}>Usuń</AppText>
                 </Pressable>
               </View>
             ))}
@@ -991,8 +936,8 @@ export function OnboardingScreen() {
       return (
         <View>
           {renderHeading(
-            'Ile czasu możesz przeznaczyć?',
-            'Chodzi o realną dostępność, nie o idealny grafik. Plan zmieści się w tym czasie.',
+            "Ile czasu możesz przeznaczyć?",
+            "Chodzi o realną dostępność, nie o idealny grafik. Plan zmieści się w tym czasie.",
           )}
 
           <View style={styles.options}>
@@ -1002,9 +947,7 @@ export function OnboardingScreen() {
                 selected={draft.timeBudget === option.id}
                 label={option.label}
                 detail={option.detail}
-                onPress={() =>
-                  patch({ timeBudget: option.id as TimeBudget })
-                }
+                onPress={() => patch({ timeBudget: option.id as TimeBudget })}
               />
             ))}
           </View>
@@ -1016,11 +959,11 @@ export function OnboardingScreen() {
       return (
         <View>
           {renderHeading(
-            'Kiedy możesz sprzątać?',
-            'Wybierz pory dnia, które zwykle najbardziej Ci odpowiadają. Poszczególnym czynnościom przypiszesz konkretne dni i terminy w ustawieniach harmonogramu.',
+            "Kiedy możesz sprzątać?",
+            "Wybierz pory dnia, które zwykle najbardziej Ci odpowiadają. Poszczególnym czynnościom przypiszesz konkretne dni i terminy w ustawieniach harmonogramu.",
           )}
 
-          {renderSectionTitle('Pory dnia')}
+          {renderSectionTitle("Pory dnia")}
 
           <View style={styles.options}>
             {DAY_PART_OPTIONS.map((option) => (
@@ -1040,19 +983,19 @@ export function OnboardingScreen() {
       return (
         <View>
           {renderHeading(
-            'Jakie czynności uwzględnić w planie?',
-            'Przygotowałam listę na podstawie informacji o Twoim domu. Sprawdź propozycje, zmień nazwy lub częstotliwość i usuń czynności, których nie potrzebujesz.',
+            "Jakie czynności uwzględnić w planie?",
+            "Przygotowałam listę na podstawie informacji o Twoim domu. Sprawdź propozycje, zmień nazwy lub częstotliwość i usuń czynności, których nie potrzebujesz.",
           )}
 
           <View style={styles.taskGroups}>
             {roomGroups.map((room) => (
               <View key={room.id}>
                 <View style={styles.groupHeader}>
-                  <Text style={styles.groupTitle}>{room.name}</Text>
+                  <AppText style={styles.groupTitle}>{room.name}</AppText>
                   <ActionButton
                     label="+ Dodaj czynność"
                     onPress={() => {
-                      setCustomTitle('');
+                      setCustomTitle("");
                       setAddingToRoom(room.id);
                     }}
                     secondary
@@ -1061,9 +1004,9 @@ export function OnboardingScreen() {
                 </View>
 
                 {room.tasks.length === 0 ? (
-                  <Text style={styles.emptyMessage}>
+                  <AppText style={styles.emptyMessage}>
                     Brak czynności w tym pomieszczeniu. Możesz dodać własną.
-                  </Text>
+                  </AppText>
                 ) : (
                   <View style={styles.options}>
                     {room.tasks.map(renderTaskCard)}
@@ -1074,9 +1017,7 @@ export function OnboardingScreen() {
 
             {applianceTasks.length > 0 ? (
               <View>
-                {renderSectionTitle(
-                  'Urządzenia do okresowego czyszczenia',
-                )}
+                {renderSectionTitle("Urządzenia do okresowego czyszczenia")}
                 <View style={styles.options}>
                   {applianceTasks.map(renderTaskCard)}
                 </View>
@@ -1085,13 +1026,13 @@ export function OnboardingScreen() {
 
             {remainingTasks.length > 0 ? (
               <View>
-                {renderSectionTitle('Pozostałe czynności')}
+                {renderSectionTitle("Pozostałe czynności")}
                 <View style={styles.options}>
                   {remainingTasks.map((task) => (
                     <View key={task.id}>
-                      <Text style={styles.taskRoomLabel}>
+                      <AppText style={styles.taskRoomLabel}>
                         {getRoomName(task.roomId)}
-                      </Text>
+                      </AppText>
                       {renderTaskCard(task)}
                     </View>
                   ))}
@@ -1102,51 +1043,39 @@ export function OnboardingScreen() {
 
           {removedTasks.length > 0 ? (
             <View style={styles.removedSection}>
-              {renderSectionTitle('Usunięte czynności')}
+              {renderSectionTitle("Usunięte czynności")}
 
               {removedTasks.map((task) => (
                 <View key={task.id} style={styles.removedRow}>
-                  <Text style={styles.removedTaskName}>
-                    {task.title}
-                  </Text>
+                  <AppText style={styles.removedTaskName}>{task.title}</AppText>
 
                   <Pressable
                     onPress={() => {
                       if (task.libraryId) {
                         setExcluded((current) =>
-                          current.filter(
-                            (id) => id !== task.libraryId,
-                          ),
+                          current.filter((id) => id !== task.libraryId),
                         );
 
-                        setSuggestedTasks((current) => [
-                          ...current,
-                          task,
-                        ]);
+                        setSuggestedTasks((current) => [...current, task]);
                       } else {
-                        setCustomTasks((current) => [
-                          ...current,
-                          task,
-                        ]);
+                        setCustomTasks((current) => [...current, task]);
                       }
 
                       setRemovedTasks((current) =>
-                        current.filter(
-                          (item) => item.id !== task.id,
-                        ),
+                        current.filter((item) => item.id !== task.id),
                       );
                     }}
                   >
-                    <Text style={styles.restoreText}>Przywróć</Text>
+                    <AppText style={styles.restoreText}>Przywróć</AppText>
                   </Pressable>
                 </View>
               ))}
             </View>
           ) : null}
 
-          <Text style={styles.helperText}>
+          <AppText style={styles.helperText}>
             Po sprawdzeniu listy przejdziesz do układania harmonogramu.
-          </Text>
+          </AppText>
         </View>
       );
     }
@@ -1156,18 +1085,18 @@ export function OnboardingScreen() {
         <View style={styles.generation}>
           <ActivityIndicator size="large" color="#3b742f" />
 
-          <Text style={styles.generationTitle}>
+          <AppText style={styles.generationTitle}>
             Przygotowujemy Twój plan
-          </Text>
+          </AppText>
 
-          <Text style={styles.generationText}>
+          <AppText style={styles.generationText}>
             {generationMessage === 0 &&
-              'Analizujemy wybrane czynności i częstotliwość sprzątania…'}
+              "Analizujemy wybrane czynności i częstotliwość sprzątania…"}
             {generationMessage === 1 &&
-              'Dopasowujemy zadania do dostępnego czasu…'}
+              "Dopasowujemy zadania do dostępnego czasu…"}
             {generationMessage === 2 &&
-              'Układamy harmonogram według Twoich preferencji…'}
-          </Text>
+              "Układamy harmonogram według Twoich preferencji…"}
+          </AppText>
 
           <View style={styles.progressDots}>
             {[0, 1, 2].map((item) => (
@@ -1175,8 +1104,7 @@ export function OnboardingScreen() {
                 key={item}
                 style={[
                   styles.progressDot,
-                  generationMessage >= item &&
-                    styles.progressDotActive,
+                  generationMessage >= item && styles.progressDotActive,
                 ]}
               />
             ))}
@@ -1188,30 +1116,30 @@ export function OnboardingScreen() {
     if (step === 7) {
       const groups = [
         {
-          id: 'daily',
-          label: 'Codzienne',
-          color: '#e5f3e5',
-          textColor: '#285c2b',
+          id: "daily",
+          label: "Codzienne",
+          color: "#e5f3e5",
+          textColor: "#285c2b",
         },
         {
-          id: 'regular',
-          label: 'Regularne',
-          color: '#e7effb',
-          textColor: '#28517c',
+          id: "regular",
+          label: "Regularne",
+          color: "#e7effb",
+          textColor: "#28517c",
         },
         {
-          id: 'periodic',
-          label: 'Okresowe',
-          color: '#fff1d9',
-          textColor: '#875b16',
+          id: "periodic",
+          label: "Okresowe",
+          color: "#fff1d9",
+          textColor: "#875b16",
         },
       ] as const;
 
       return (
         <View>
           {renderHeading(
-            'Twój plan sprzątania',
-            'Tak może wyglądać Twój harmonogram. Sprawdź podział czynności. Jeśli chcesz coś zmienić, wróć do listy i wygeneruj plan ponownie.',
+            "Twój plan sprzątania",
+            "Tak może wyglądać Twój harmonogram. Sprawdź podział czynności. Jeśli chcesz coś zmienić, wróć do listy i wygeneruj plan ponownie.",
           )}
 
           {groups.map((group) => {
@@ -1222,7 +1150,7 @@ export function OnboardingScreen() {
             return (
               <View key={group.id} style={styles.previewGroup}>
                 <View style={styles.groupHeader}>
-                  <Text style={styles.groupTitle}>{group.label}</Text>
+                  <AppText style={styles.groupTitle}>{group.label}</AppText>
 
                   <View
                     style={[
@@ -1230,33 +1158,33 @@ export function OnboardingScreen() {
                       { backgroundColor: group.color },
                     ]}
                   >
-                    <Text
+                    <AppText
                       style={[
                         styles.countBadgeText,
                         { color: group.textColor },
                       ]}
                     >
-                      {tasks.length}{' '}
-                      {tasks.length === 1 ? 'czynność' : 'czynności'}
-                    </Text>
+                      {tasks.length}{" "}
+                      {tasks.length === 1 ? "czynność" : "czynności"}
+                    </AppText>
                   </View>
                 </View>
 
                 {tasks.length === 0 ? (
-                  <Text style={styles.emptyMessage}>
+                  <AppText style={styles.emptyMessage}>
                     Brak czynności w tej grupie.
-                  </Text>
+                  </AppText>
                 ) : (
                   <View style={styles.options}>
                     {tasks.map((task) => (
                       <View key={task.id} style={styles.previewTask}>
-                        <Text style={styles.previewTaskTitle}>
+                        <AppText style={styles.previewTaskTitle}>
                           {task.title}
-                        </Text>
-                        <Text style={styles.previewTaskMeta}>
-                          {getRoomName(task.roomId)} ·{' '}
+                        </AppText>
+                        <AppText style={styles.previewTaskMeta}>
+                          {getRoomName(task.roomId)} ·{" "}
                           {formatShortDate(task.dueDate)}
-                        </Text>
+                        </AppText>
                       </View>
                     ))}
                   </View>
@@ -1266,10 +1194,10 @@ export function OnboardingScreen() {
           })}
 
           {plannedTasks.length === 0 ? (
-            <Text style={styles.emptyMessage}>
-              Nie ma jeszcze żadnych czynności do zaplanowania. Wróć do listy
-              i dodaj przynajmniej jedną.
-            </Text>
+            <AppText style={styles.emptyMessage}>
+              Nie ma jeszcze żadnych czynności do zaplanowania. Wróć do listy i
+              dodaj przynajmniej jedną.
+            </AppText>
           ) : null}
         </View>
       );
@@ -1287,34 +1215,31 @@ export function OnboardingScreen() {
     >
       <KeyboardAvoidingView
         style={styles.modalBackdrop}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
+            <AppText style={styles.modalTitle}>
               Niestandardowa częstotliwość
-            </Text>
+            </AppText>
             <Pressable
               onPress={() => setCustomFrequencyTask(null)}
               style={styles.modalClose}
             >
-              <Text style={styles.modalCloseText}>×</Text>
+              <AppText style={styles.modalCloseText}>×</AppText>
             </Pressable>
           </View>
 
-          <Text style={styles.description}>
+          <AppText style={styles.description}>
             Ustaw, jak często czynność ma się powtarzać.
-          </Text>
+          </AppText>
 
           <FieldLabel>Powtarzaj co</FieldLabel>
 
           <TextInput
             value={String(customRuleDraft.interval)}
             onChangeText={(value) => {
-              const interval = Math.max(
-                1,
-                Math.min(365, Number(value) || 1),
-              );
+              const interval = Math.max(1, Math.min(365, Number(value) || 1));
 
               setCustomRuleDraft((current) => ({
                 ...current,
@@ -1329,29 +1254,29 @@ export function OnboardingScreen() {
 
           <View style={styles.segmentRow}>
             {[
-              { id: 'days', label: 'Dni' },
-              { id: 'weeks', label: 'Tygodnie' },
-              { id: 'months', label: 'Miesiące' },
+              { id: "days", label: "Dni" },
+              { id: "weeks", label: "Tygodnie" },
+              { id: "months", label: "Miesiące" },
             ].map((unit) => (
               <Pressable
                 key={unit.id}
                 onPress={() => {
                   const interval = customRuleDraft.interval;
 
-                  if (unit.id === 'days') {
-                    setCustomRuleDraft({ unit: 'days', interval });
-                  } else if (unit.id === 'weeks') {
+                  if (unit.id === "days") {
+                    setCustomRuleDraft({ unit: "days", interval });
+                  } else if (unit.id === "weeks") {
                     setCustomRuleDraft({
-                      unit: 'weeks',
+                      unit: "weeks",
                       interval,
                       weekdays: [1],
                     });
                   } else {
                     setCustomRuleDraft({
-                      unit: 'months',
+                      unit: "months",
                       interval,
                       monthlyPattern: {
-                        type: 'dayOfMonth',
+                        type: "dayOfMonth",
                         day: 1,
                       },
                     });
@@ -1359,11 +1284,10 @@ export function OnboardingScreen() {
                 }}
                 style={[
                   styles.segment,
-                  customRuleDraft.unit === unit.id &&
-                    styles.segmentSelected,
+                  customRuleDraft.unit === unit.id && styles.segmentSelected,
                 ]}
               >
-                <Text
+                <AppText
                   style={[
                     styles.segmentText,
                     customRuleDraft.unit === unit.id &&
@@ -1371,26 +1295,26 @@ export function OnboardingScreen() {
                   ]}
                 >
                   {unit.label}
-                </Text>
+                </AppText>
               </Pressable>
             ))}
           </View>
 
-          {customRuleDraft.unit === 'days' ? (
-            <Text style={styles.infoBox}>
-              Czynność będzie powtarzać się co {customRuleDraft.interval}{' '}
-              {customRuleDraft.interval === 1 ? 'dzień' : 'dni'}.
-            </Text>
+          {customRuleDraft.unit === "days" ? (
+            <AppText style={styles.infoBox}>
+              Czynność będzie powtarzać się co {customRuleDraft.interval}{" "}
+              {customRuleDraft.interval === 1 ? "dzień" : "dni"}.
+            </AppText>
           ) : null}
 
-          {customRuleDraft.unit === 'weeks' ? (
+          {customRuleDraft.unit === "weeks" ? (
             <View style={styles.modalSection}>
               <FieldLabel>Powtarzaj w dniach:</FieldLabel>
 
               <View style={styles.weekdayRow}>
                 {WEEKDAYS.map((day) => {
                   const selected =
-                    customRuleDraft.unit === 'weeks' &&
+                    customRuleDraft.unit === "weeks" &&
                     customRuleDraft.weekdays.includes(day.id);
 
                   return (
@@ -1402,45 +1326,45 @@ export function OnboardingScreen() {
                         selected && styles.weekdayButtonSelected,
                       ]}
                     >
-                      <Text
+                      <AppText
                         style={[
                           styles.weekdayText,
                           selected && styles.weekdayTextSelected,
                         ]}
                       >
                         {day.label}
-                      </Text>
+                      </AppText>
                     </Pressable>
                   );
                 })}
               </View>
 
               {customRuleDraft.weekdays.length === 0 ? (
-                <Text style={styles.errorText}>
+                <AppText style={styles.errorText}>
                   Wybierz przynajmniej jeden dzień tygodnia.
-                </Text>
+                </AppText>
               ) : null}
             </View>
           ) : null}
 
-          {customRuleDraft.unit === 'months' ? (
+          {customRuleDraft.unit === "months" ? (
             <View style={styles.modalSection}>
               <FieldLabel>Sposób powtarzania</FieldLabel>
 
               <View style={styles.options}>
                 <ChoiceButton
                   selected={
-                    customRuleDraft.monthlyPattern.type === 'dayOfMonth'
+                    customRuleDraft.monthlyPattern.type === "dayOfMonth"
                   }
                   label="W konkretnym dniu miesiąca"
                   onPress={() =>
                     setCustomRuleDraft((current) => {
-                      if (current.unit !== 'months') return current;
+                      if (current.unit !== "months") return current;
 
                       return {
                         ...current,
                         monthlyPattern: {
-                          type: 'dayOfMonth',
+                          type: "dayOfMonth",
                           day: 1,
                         },
                       };
@@ -1450,18 +1374,17 @@ export function OnboardingScreen() {
 
                 <ChoiceButton
                   selected={
-                    customRuleDraft.monthlyPattern.type ===
-                    'weekdayOrdinal'
+                    customRuleDraft.monthlyPattern.type === "weekdayOrdinal"
                   }
                   label="W określony dzień tygodnia"
                   onPress={() =>
                     setCustomRuleDraft((current) => {
-                      if (current.unit !== 'months') return current;
+                      if (current.unit !== "months") return current;
 
                       return {
                         ...current,
                         monthlyPattern: {
-                          type: 'weekdayOrdinal',
+                          type: "weekdayOrdinal",
                           ordinal: 1,
                           weekday: 1,
                         },
@@ -1471,43 +1394,42 @@ export function OnboardingScreen() {
                 />
               </View>
 
-              {customRuleDraft.monthlyPattern.type === 'dayOfMonth' ? (
+              {customRuleDraft.monthlyPattern.type === "dayOfMonth" ? (
                 <>
                   <FieldLabel>Dzień miesiąca</FieldLabel>
                   <View style={styles.options}>
-                    {Array.from(
-                      { length: 31 },
-                      (_, index) => index + 1,
-                    ).map((day) => (
-                      <ChoiceButton
-                        key={day}
-                        selected={
-                          customRuleDraft.unit === 'months' &&
-                          customRuleDraft.monthlyPattern.type ===
-                            'dayOfMonth' &&
-                          customRuleDraft.monthlyPattern.day === day
-                        }
-                        label={`${day}. dzień miesiąca`}
-                        onPress={() =>
-                          setCustomRuleDraft((current) => {
-                            if (
-                              current.unit !== 'months' ||
-                              current.monthlyPattern.type !== 'dayOfMonth'
-                            ) {
-                              return current;
-                            }
+                    {Array.from({ length: 31 }, (_, index) => index + 1).map(
+                      (day) => (
+                        <ChoiceButton
+                          key={day}
+                          selected={
+                            customRuleDraft.unit === "months" &&
+                            customRuleDraft.monthlyPattern.type ===
+                              "dayOfMonth" &&
+                            customRuleDraft.monthlyPattern.day === day
+                          }
+                          label={`${day}. dzień miesiąca`}
+                          onPress={() =>
+                            setCustomRuleDraft((current) => {
+                              if (
+                                current.unit !== "months" ||
+                                current.monthlyPattern.type !== "dayOfMonth"
+                              ) {
+                                return current;
+                              }
 
-                            return {
-                              ...current,
-                              monthlyPattern: {
-                                type: 'dayOfMonth',
-                                day,
-                              },
-                            };
-                          })
-                        }
-                      />
-                    ))}
+                              return {
+                                ...current,
+                                monthlyPattern: {
+                                  type: "dayOfMonth",
+                                  day,
+                                },
+                              };
+                            })
+                          }
+                        />
+                      ),
+                    )}
                   </View>
                 </>
               ) : (
@@ -1515,28 +1437,26 @@ export function OnboardingScreen() {
                   <FieldLabel>Który tydzień?</FieldLabel>
                   <View style={styles.options}>
                     {[
-                      { value: 1, label: 'Pierwszy' },
-                      { value: 2, label: 'Drugi' },
-                      { value: 3, label: 'Trzeci' },
-                      { value: 4, label: 'Czwarty' },
-                      { value: -1, label: 'Ostatni' },
+                      { value: 1, label: "Pierwszy" },
+                      { value: 2, label: "Drugi" },
+                      { value: 3, label: "Trzeci" },
+                      { value: 4, label: "Czwarty" },
+                      { value: -1, label: "Ostatni" },
                     ].map((item) => (
                       <ChoiceButton
                         key={item.value}
                         selected={
-                          customRuleDraft.unit === 'months' &&
+                          customRuleDraft.unit === "months" &&
                           customRuleDraft.monthlyPattern.type ===
-                            'weekdayOrdinal' &&
-                          customRuleDraft.monthlyPattern.ordinal ===
-                            item.value
+                            "weekdayOrdinal" &&
+                          customRuleDraft.monthlyPattern.ordinal === item.value
                         }
                         label={item.label}
                         onPress={() =>
                           setCustomRuleDraft((current) => {
                             if (
-                              current.unit !== 'months' ||
-                              current.monthlyPattern.type !==
-                                'weekdayOrdinal'
+                              current.unit !== "months" ||
+                              current.monthlyPattern.type !== "weekdayOrdinal"
                             ) {
                               return current;
                             }
@@ -1545,12 +1465,7 @@ export function OnboardingScreen() {
                               ...current,
                               monthlyPattern: {
                                 ...current.monthlyPattern,
-                                ordinal: item.value as
-                                  | 1
-                                  | 2
-                                  | 3
-                                  | 4
-                                  | -1,
+                                ordinal: item.value as 1 | 2 | 3 | 4 | -1,
                               },
                             };
                           })
@@ -1565,18 +1480,17 @@ export function OnboardingScreen() {
                       <ChoiceButton
                         key={index}
                         selected={
-                          customRuleDraft.unit === 'months' &&
+                          customRuleDraft.unit === "months" &&
                           customRuleDraft.monthlyPattern.type ===
-                            'weekdayOrdinal' &&
+                            "weekdayOrdinal" &&
                           customRuleDraft.monthlyPattern.weekday === index
                         }
                         label={day}
                         onPress={() =>
                           setCustomRuleDraft((current) => {
                             if (
-                              current.unit !== 'months' ||
-                              current.monthlyPattern.type !==
-                                'weekdayOrdinal'
+                              current.unit !== "months" ||
+                              current.monthlyPattern.type !== "weekdayOrdinal"
                             ) {
                               return current;
                             }
@@ -1608,7 +1522,7 @@ export function OnboardingScreen() {
               label="Zapisz częstotliwość"
               onPress={saveCustomFrequency}
               disabled={
-                customRuleDraft.unit === 'weeks' &&
+                customRuleDraft.unit === "weeks" &&
                 customRuleDraft.weekdays.length === 0
               }
             />
@@ -1625,33 +1539,33 @@ export function OnboardingScreen() {
       animationType="fade"
       onRequestClose={() => {
         setAddingToRoom(null);
-        setCustomTitle('');
+        setCustomTitle("");
       }}
     >
       <KeyboardAvoidingView
         style={styles.modalBackdrop}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Dodaj czynność</Text>
+            <AppText style={styles.modalTitle}>Dodaj czynność</AppText>
             <Pressable
               onPress={() => {
                 setAddingToRoom(null);
-                setCustomTitle('');
+                setCustomTitle("");
               }}
               style={styles.modalClose}
             >
-              <Text style={styles.modalCloseText}>×</Text>
+              <AppText style={styles.modalCloseText}>×</AppText>
             </Pressable>
           </View>
 
-          <Text style={styles.description}>
-            Pomieszczenie:{' '}
-            <Text style={styles.boldText}>
-              {addingToRoom ? getRoomName(addingToRoom) : ''}
-            </Text>
-          </Text>
+          <AppText style={styles.description}>
+            Pomieszczenie:{" "}
+            <AppText style={styles.boldText}>
+              {addingToRoom ? getRoomName(addingToRoom) : ""}
+            </AppText>
+          </AppText>
 
           <FieldLabel>Nazwa czynności</FieldLabel>
           <TextInput
@@ -1672,7 +1586,7 @@ export function OnboardingScreen() {
               label="Anuluj"
               onPress={() => {
                 setAddingToRoom(null);
-                setCustomTitle('');
+                setCustomTitle("");
               }}
               secondary
             />
@@ -1690,7 +1604,7 @@ export function OnboardingScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <View style={styles.container}>
         <ScrollView
           style={styles.scroll}
@@ -1699,9 +1613,9 @@ export function OnboardingScreen() {
         >
           {step < 5 ? (
             <>
-              <Text style={styles.stageLabel}>
+              <AppText style={styles.stageLabel}>
                 Etap {STAGES[step]} z 5
-              </Text>
+              </AppText>
 
               <View style={styles.progressBar}>
                 {[1, 2, 3, 4, 5].map((stage) => (
@@ -1709,15 +1623,14 @@ export function OnboardingScreen() {
                     key={stage}
                     style={[
                       styles.progressSegment,
-                      stage <= STAGES[step] &&
-                        styles.progressSegmentActive,
+                      stage <= STAGES[step] && styles.progressSegmentActive,
                     ]}
                   />
                 ))}
               </View>
             </>
           ) : (
-            <Text style={styles.stageLabel}>Twój plan</Text>
+            <AppText style={styles.stageLabel}>Twój plan</AppText>
           )}
 
           {renderStepContent()}
@@ -1726,7 +1639,7 @@ export function OnboardingScreen() {
         {step !== 6 ? (
           <View style={styles.footer}>
             {saveError ? (
-              <Text style={styles.errorText}>{saveError}</Text>
+              <AppText style={styles.errorText}>{saveError}</AppText>
             ) : null}
 
             <View style={styles.footerButtons}>
@@ -1735,7 +1648,7 @@ export function OnboardingScreen() {
                   label="Wstecz"
                   secondary
                   onPress={() => {
-                    setSaveError('');
+                    setSaveError("");
                     setStep(step === 7 ? 5 : step - 1);
                   }}
                 />
@@ -1759,7 +1672,7 @@ export function OnboardingScreen() {
               ) : step === 7 ? (
                 <View style={styles.footerPrimary}>
                   <ActionButton
-                    label={saving ? 'Zapisywanie…' : 'Zatwierdź plan'}
+                    label={saving ? "Zapisywanie…" : "Zatwierdź plan"}
                     onPress={handleAcceptPlan}
                     disabled={saving}
                   />
@@ -1779,11 +1692,11 @@ export function OnboardingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f5e6ce',
+    backgroundColor: "#f5e6ce",
   },
   container: {
     flex: 1,
-    backgroundColor: '#f5e6ce',
+    backgroundColor: "#f5e6ce",
   },
   scroll: {
     flex: 1,
@@ -1794,15 +1707,14 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   stageLabel: {
-    color: '#3b742f',
+    color: "#3b742f",
     fontSize: 12,
-    fontWeight: '700',
-    fontFamily: 'SenBold',
-    textTransform: 'uppercase',
+    fontFamily: "SenBold",
+    textTransform: "uppercase",
     letterSpacing: 0.7,
   },
   progressBar: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 6,
     marginTop: 12,
     marginBottom: 8,
@@ -1811,35 +1723,35 @@ const styles = StyleSheet.create({
     height: 6,
     flex: 1,
     borderRadius: 10,
-    backgroundColor: '#d8d0c1',
+    backgroundColor: "#d8d0c1",
   },
   progressSegmentActive: {
-    backgroundColor: '#3b742f',
+    backgroundColor: "#3b742f",
   },
   headingBlock: {
     marginTop: 22,
     marginBottom: 20,
   },
   heading: {
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 26,
     lineHeight: 33,
-    fontFamily: 'SenBold',
-    fontWeight: '700',
+    fontFamily: "SenBold",
+    fontWeight: "700",
   },
   description: {
-    color: '#68645e',
+    color: "#68645e",
     fontSize: 14,
     lineHeight: 21,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
     marginTop: 8,
   },
   sectionTitle: {
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 15,
     lineHeight: 21,
-    fontFamily: 'SenBold',
-    fontWeight: '700',
+    fontFamily: "SenBold",
+    fontWeight: "700",
     marginTop: 22,
     marginBottom: 10,
   },
@@ -1847,102 +1759,101 @@ const styles = StyleSheet.create({
     gap: 9,
   },
   choice: {
-    position: 'relative',
+    position: "relative",
     borderWidth: 1,
-    borderColor: '#ded8ce',
-    backgroundColor: '#fffdf9',
+    borderColor: "#ded8ce",
+    backgroundColor: "#fffdf9",
     borderRadius: 16,
     paddingHorizontal: 15,
     paddingVertical: 14,
   },
   choiceSelected: {
-    borderColor: '#3b742f',
-    backgroundColor: '#edf4e8',
+    borderColor: "#3b742f",
+    backgroundColor: "#edf4e8",
   },
   choiceLabel: {
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 14,
-    fontFamily: 'SenBold',
-    fontWeight: '700',
+    fontFamily: "SenBold",
+    fontWeight: "700",
     paddingRight: 24,
   },
   choiceDetail: {
-    color: '#77736c',
+    color: "#77736c",
     fontSize: 12,
     lineHeight: 18,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
     marginTop: 4,
   },
   choiceCheck: {
-    position: 'absolute',
+    position: "absolute",
     right: 14,
     top: 13,
-    color: '#3b742f',
+    color: "#3b742f",
     fontSize: 17,
-    fontWeight: '700',
+    fontFamily: "SenBold",
   },
   pressed: {
     opacity: 0.78,
   },
   twoColumns: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   textInput: {
     minHeight: 48,
     borderWidth: 1,
-    borderColor: '#ded8ce',
+    borderColor: "#ded8ce",
     borderRadius: 14,
-    backgroundColor: '#fffdf9',
+    backgroundColor: "#fffdf9",
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 14,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   multilineInput: {
     minHeight: 100,
   },
   addRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginTop: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   addInput: {
     flex: 1,
     minWidth: 0,
     minHeight: 48,
     borderWidth: 1,
-    borderColor: '#ded8ce',
+    borderColor: "#ded8ce",
     borderRadius: 13,
-    backgroundColor: '#fffdf9',
+    backgroundColor: "#fffdf9",
     paddingHorizontal: 12,
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 13,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   actionButton: {
     minHeight: 46,
     borderRadius: 14,
     paddingHorizontal: 15,
     paddingVertical: 12,
-    backgroundColor: '#3b742f',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#3b742f",
+    alignItems: "center",
+    justifyContent: "center",
   },
   actionButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 13,
-    fontWeight: '700',
-    fontFamily: 'SenBold',
-    textAlign: 'center',
+    fontFamily: "SenBold",
+    textAlign: "center",
   },
   secondaryButton: {
-    backgroundColor: '#e9f1e4',
+    backgroundColor: "#e9f1e4",
   },
   secondaryButtonText: {
-    color: '#3b742f',
+    color: "#3b742f",
   },
   compactButton: {
     minHeight: 38,
@@ -1950,22 +1861,22 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   disabledButton: {
-    backgroundColor: '#b9b6ae',
+    backgroundColor: "#b9b6ae",
     opacity: 0.65,
   },
   customApplianceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#c9ddbd',
-    backgroundColor: '#edf4e8',
+    borderColor: "#c9ddbd",
+    backgroundColor: "#edf4e8",
     padding: 12,
   },
   customApplianceName: {
     flex: 1,
-    color: '#4e4d4d',
-    fontFamily: 'SenBold',
+    color: "#4e4d4d",
+    fontFamily: "SenBold",
     fontSize: 14,
   },
   taskGroups: {
@@ -1973,42 +1884,41 @@ const styles = StyleSheet.create({
     gap: 25,
   },
   groupHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 10,
     marginBottom: 12,
   },
   groupTitle: {
     flex: 1,
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 18,
-    fontFamily: 'SenBold',
-    fontWeight: '700',
+    fontFamily: "SenBold",
   },
   taskCard: {
     borderWidth: 1,
-    borderColor: '#ded8ce',
+    borderColor: "#ded8ce",
     borderRadius: 16,
-    backgroundColor: '#fffdf9',
+    backgroundColor: "#fffdf9",
     padding: 12,
     gap: 10,
   },
   taskTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   taskTitleInput: {
     flex: 1,
     minWidth: 0,
     borderWidth: 1,
-    borderColor: '#ded8ce',
+    borderColor: "#ded8ce",
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 9,
-    color: '#4e4d4d',
-    fontFamily: 'SenBold',
+    color: "#4e4d4d",
+    fontFamily: "SenBold",
     fontSize: 13,
   },
   removeButton: {
@@ -2016,68 +1926,67 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   removeButtonText: {
-    color: '#817b72',
-    fontFamily: 'SenBold',
+    color: "#817b72",
+    fontFamily: "SenBold",
     fontSize: 12,
   },
   fieldLabel: {
-    color: '#68645e',
-    fontFamily: 'SenBold',
+    color: "#68645e",
+    fontFamily: "SenBold",
     fontSize: 12,
     marginTop: 5,
     marginBottom: 7,
   },
   frequencyList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 7,
   },
   frequencyOption: {
     borderWidth: 1,
-    borderColor: '#ded8ce',
-    backgroundColor: '#ffffff',
+    borderColor: "#ded8ce",
+    backgroundColor: "#ffffff",
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
   frequencyOptionSelected: {
-    borderColor: '#3b742f',
-    backgroundColor: '#edf4e8',
+    borderColor: "#3b742f",
+    backgroundColor: "#edf4e8",
   },
   frequencyText: {
-    color: '#68645e',
+    color: "#68645e",
     fontSize: 11,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   frequencyTextSelected: {
-    color: '#3b742f',
-    fontFamily: 'SenBold',
-    fontWeight: '700',
+    color: "#3b742f",
+    fontFamily: "SenBold",
   },
   taskRoomLabel: {
-    color: '#817b72',
-    fontFamily: 'Sen',
+    color: "#817b72",
+    fontFamily: "Sen",
     fontSize: 11,
     marginBottom: 5,
   },
   emptyMessage: {
-    color: '#817b72',
-    backgroundColor: '#f0ede6',
+    color: "#817b72",
+    backgroundColor: "#f0ede6",
     borderRadius: 14,
     padding: 14,
     fontSize: 13,
     lineHeight: 19,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   removedSection: {
     marginTop: 28,
   },
   removedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 10,
-    backgroundColor: '#eae6de',
+    backgroundColor: "#eae6de",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 11,
@@ -2085,45 +1994,45 @@ const styles = StyleSheet.create({
   },
   removedTaskName: {
     flex: 1,
-    color: '#68645e',
+    color: "#68645e",
     fontSize: 13,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   restoreText: {
-    color: '#3b742f',
-    fontFamily: 'SenBold',
+    color: "#3b742f",
+    fontFamily: "SenBold",
     fontSize: 12,
   },
   helperText: {
-    color: '#817b72',
-    fontFamily: 'Sen',
+    color: "#817b72",
+    fontFamily: "Sen",
     fontSize: 12,
     lineHeight: 18,
     marginTop: 24,
   },
   generation: {
     minHeight: 420,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
   },
   generationTitle: {
-    color: '#4e4d4d',
-    fontFamily: 'SenBold',
+    color: "#4e4d4d",
+    fontFamily: "SenBold",
     fontSize: 21,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 25,
   },
   generationText: {
-    color: '#817b72',
-    fontFamily: 'Sen',
+    color: "#817b72",
+    fontFamily: "Sen",
     fontSize: 14,
     lineHeight: 21,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 12,
   },
   progressDots: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 9,
     marginTop: 28,
   },
@@ -2131,10 +2040,10 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 10,
-    backgroundColor: '#d8d0c1',
+    backgroundColor: "#d8d0c1",
   },
   progressDotActive: {
-    backgroundColor: '#3b742f',
+    backgroundColor: "#3b742f",
   },
   previewGroup: {
     marginTop: 25,
@@ -2145,38 +2054,38 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   countBadgeText: {
-    fontFamily: 'SenBold',
+    fontFamily: "SenBold",
     fontSize: 11,
   },
   previewTask: {
     borderWidth: 1,
-    borderColor: '#ded8ce',
-    backgroundColor: '#fffdf9',
+    borderColor: "#ded8ce",
+    backgroundColor: "#fffdf9",
     borderRadius: 14,
     padding: 13,
   },
   previewTaskTitle: {
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 13,
-    fontFamily: 'SenBold',
+    fontFamily: "SenBold",
   },
   previewTaskMeta: {
-    color: '#817b72',
+    color: "#817b72",
     fontSize: 11,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
     marginTop: 5,
   },
   footer: {
     borderTopWidth: 1,
-    borderTopColor: '#ded8ce',
-    backgroundColor: '#fffdf9',
+    borderTopColor: "#ded8ce",
+    backgroundColor: "#fffdf9",
     paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 12,
   },
   footerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 9,
   },
   footerPrimary: {
@@ -2184,118 +2093,118 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.48)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.48)",
+    justifyContent: "center",
     padding: 18,
   },
   modalCard: {
-    maxHeight: '90%',
-    backgroundColor: '#fffdf9',
+    maxHeight: "90%",
+    backgroundColor: "#fffdf9",
     borderRadius: 22,
     padding: 19,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 10,
     marginBottom: 8,
   },
   modalTitle: {
     flex: 1,
-    color: '#4e4d4d',
+    color: "#4e4d4d",
     fontSize: 19,
-    fontFamily: 'SenBold',
+    fontFamily: "SenBold",
   },
   modalClose: {
     width: 35,
     height: 35,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 10,
-    backgroundColor: '#f0ede6',
+    backgroundColor: "#f0ede6",
   },
   modalCloseText: {
-    color: '#68645e',
+    color: "#68645e",
     fontSize: 24,
   },
   modalSection: {
     marginTop: 18,
   },
   segmentRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 7,
   },
   segment: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ded8ce',
+    borderColor: "#ded8ce",
     borderRadius: 11,
     paddingVertical: 11,
-    alignItems: 'center',
+    alignItems: "center",
   },
   segmentSelected: {
-    borderColor: '#3b742f',
-    backgroundColor: '#edf4e8',
+    borderColor: "#3b742f",
+    backgroundColor: "#edf4e8",
   },
   segmentText: {
-    color: '#68645e',
+    color: "#68645e",
     fontSize: 11,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
   },
   segmentTextSelected: {
-    color: '#3b742f',
-    fontFamily: 'SenBold',
+    color: "#3b742f",
+    fontFamily: "SenBold",
   },
   infoBox: {
-    color: '#68645e',
-    backgroundColor: '#f0ede6',
+    color: "#68645e",
+    backgroundColor: "#f0ede6",
     borderRadius: 12,
     padding: 12,
     marginTop: 15,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
     fontSize: 13,
     lineHeight: 19,
   },
   weekdayRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 7,
   },
   weekdayButton: {
     borderWidth: 1,
-    borderColor: '#ded8ce',
+    borderColor: "#ded8ce",
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   weekdayButtonSelected: {
-    borderColor: '#3b742f',
-    backgroundColor: '#edf4e8',
+    borderColor: "#3b742f",
+    backgroundColor: "#edf4e8",
   },
   weekdayText: {
-    color: '#68645e',
-    fontFamily: 'Sen',
+    color: "#68645e",
+    fontFamily: "Sen",
     fontSize: 12,
   },
   weekdayTextSelected: {
-    color: '#3b742f',
-    fontFamily: 'SenBold',
+    color: "#3b742f",
+    fontFamily: "SenBold",
   },
   modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     gap: 9,
     marginTop: 22,
   },
   errorText: {
-    color: '#b42318',
+    color: "#b42318",
     fontSize: 12,
-    fontFamily: 'Sen',
+    fontFamily: "Sen",
     marginBottom: 8,
   },
   boldText: {
-    color: '#4e4d4d',
-    fontFamily: 'SenBold',
+    color: "#4e4d4d",
+    fontFamily: "SenBold",
   },
 });

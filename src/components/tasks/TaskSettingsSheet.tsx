@@ -2,10 +2,10 @@ import { useState, type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { AppText } from '@/components/ui/AppText';
 
 import type {
   CleaningTask,
@@ -73,7 +73,7 @@ function Field({
 }) {
   return (
     <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <AppText style={styles.fieldLabel}>{label}</AppText>
       {children}
     </View>
   );
@@ -102,7 +102,7 @@ function ChoiceButton({
         pressed && styles.pressed,
       ]}
     >
-      <Text
+      <AppText
         style={[
           styles.choiceText,
           compact && styles.choiceTextCompact,
@@ -110,7 +110,7 @@ function ChoiceButton({
         ]}
       >
         {label}
-      </Text>
+      </AppText>
     </Pressable>
   );
 }
@@ -331,17 +331,17 @@ export function TaskSettingsSheet({
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.saveButtonText}>Zapisz zmiany</Text>
+          <AppText style={styles.saveButtonText}>Zapisz zmiany</AppText>
         </Pressable>
       }
     >
       <View style={styles.content}>
-        <Text style={styles.description}>
+        <AppText style={styles.description}>
           Możesz przesunąć termin, odłożyć czynność, pominąć ją tym razem albo
           zmienić częstotliwość. Brak wykonania niczego nie psuje.
-        </Text>
+        </AppText>
 
-        <Text style={styles.currentFrequency}>
+        <AppText style={styles.currentFrequency}>
           Teraz:{' '}
           {frequencyLabel(
             task.frequency,
@@ -349,7 +349,7 @@ export function TaskSettingsSheet({
             task.scheduleNote,
             task.customRule,
           )}
-        </Text>
+        </AppText>
 
         <Field label="Nazwa">
           <TextInput
@@ -398,14 +398,14 @@ export function TaskSettingsSheet({
             placeholder="2026-12-31"
             placeholderTextColor={COLORS.muted}
           />
-          <Text style={styles.helperText}>
+          <AppText style={styles.helperText}>
             Wpisz datę w formacie rok-miesiąc-dzień. Najwcześniejszy termin:{' '}
             {todayISO()}.
-          </Text>
+          </AppText>
         </Field>
 
         <View style={styles.section}>
-          <Text style={styles.fieldLabel}>Częstotliwość</Text>
+          <AppText style={styles.fieldLabel}>Częstotliwość</AppText>
 
           <View style={styles.frequencyGrid}>
             {FREQUENCY_OPTIONS.map((option) => (
@@ -425,12 +425,12 @@ export function TaskSettingsSheet({
           {frequency === 'custom' && (
             <View style={styles.customBox}>
               <View>
-                <Text style={styles.customTitle}>
+                <AppText style={styles.customTitle}>
                   Ustaw własną częstotliwość
-                </Text>
-                <Text style={styles.helperText}>
+                </AppText>
+                <AppText style={styles.helperText}>
                   Wybierz odstęp i określ, kiedy czynność ma się powtarzać.
-                </Text>
+                </AppText>
               </View>
 
               <View style={styles.unitRow}>
@@ -470,21 +470,21 @@ export function TaskSettingsSheet({
                     keyboardType="number-pad"
                     style={[styles.input, styles.intervalInput]}
                   />
-                  <Text style={styles.intervalUnit}>
+                  <AppText style={styles.intervalUnit}>
                     {customRuleDraft.unit === 'days'
                       ? 'dni'
                       : customRuleDraft.unit === 'weeks'
                         ? 'tygodni'
                         : 'miesięcy'}
-                  </Text>
+                  </AppText>
                 </View>
               </Field>
 
               {customRuleDraft.unit === 'weeks' && (
                 <View style={styles.section}>
-                  <Text style={styles.fieldLabel}>
+                  <AppText style={styles.fieldLabel}>
                     W które dni tygodnia?
-                  </Text>
+                  </AppText>
 
                   <View style={styles.weekdayRow}>
                     {WEEKDAYS.map((day) => {
@@ -505,15 +505,15 @@ export function TaskSettingsSheet({
                     })}
                   </View>
 
-                  <Text style={styles.helperText}>
+                  <AppText style={styles.helperText}>
                     Możesz zaznaczyć kilka dni.
-                  </Text>
+                  </AppText>
                 </View>
               )}
 
               {customRuleDraft.unit === 'months' && (
                 <View style={styles.section}>
-                  <Text style={styles.fieldLabel}>Kiedy w miesiącu?</Text>
+                  <AppText style={styles.fieldLabel}>Kiedy w miesiącu?</AppText>
 
                   <View style={styles.patternRow}>
                     <View style={styles.patternItem}>
@@ -565,7 +565,7 @@ export function TaskSettingsSheet({
 
                   {customRuleDraft.monthlyPattern.type === 'dayOfMonth' ? (
                     <View style={styles.inlineField}>
-                      <Text style={styles.inlineLabel}>Dnia</Text>
+                      <AppText style={styles.inlineLabel}>Dnia</AppText>
                       <TextInput
                         value={String(customRuleDraft.monthlyPattern.day)}
                         onChangeText={(value) => {
@@ -591,9 +591,9 @@ export function TaskSettingsSheet({
                         keyboardType="number-pad"
                         style={[styles.input, styles.dayInput]}
                       />
-                      <Text style={styles.inlineLabel}>
+                      <AppText style={styles.inlineLabel}>
                         każdego miesiąca
-                      </Text>
+                      </AppText>
                     </View>
                   ) : (
                     <View style={styles.selectFields}>
@@ -700,7 +700,7 @@ export function TaskSettingsSheet({
 
         {error ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{error}</Text>
+            <AppText style={styles.errorText}>{error}</AppText>
           </View>
         ) : null}
       </View>
@@ -726,9 +726,9 @@ function ActionButton({
         pressed && styles.pressed,
       ]}
     >
-      <Text style={[styles.actionText, danger && styles.dangerText]}>
+      <AppText style={[styles.actionText, danger && styles.dangerText]}>
         {label}
-      </Text>
+      </AppText>
     </Pressable>
   );
 }
@@ -746,7 +746,6 @@ const styles = StyleSheet.create({
   currentFrequency: {
     color: COLORS.muted,
     fontSize: 12,
-    fontWeight: '600',
   },
   field: {
     gap: 8,
@@ -754,7 +753,6 @@ const styles = StyleSheet.create({
   fieldLabel: {
     color: COLORS.textDark,
     fontSize: 14,
-    fontWeight: '700',
   },
   input: {
     width: '100%',
@@ -767,6 +765,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     color: COLORS.textDark,
     fontSize: 15,
+    fontFamily: 'Sen',
   },
   helperText: {
     color: COLORS.muted,
@@ -804,14 +803,12 @@ const styles = StyleSheet.create({
   choiceText: {
     color: COLORS.text,
     fontSize: 13,
-    fontWeight: '600',
   },
   choiceTextCompact: {
     fontSize: 12,
   },
   choiceTextSelected: {
     color: COLORS.green,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.78,
@@ -839,7 +836,6 @@ const styles = StyleSheet.create({
   customTitle: {
     color: COLORS.textDark,
     fontSize: 14,
-    fontWeight: '700',
   },
   unitRow: {
     flexDirection: 'row',
@@ -906,7 +902,6 @@ const styles = StyleSheet.create({
   actionText: {
     color: COLORS.textDark,
     fontSize: 14,
-    fontWeight: '600',
   },
   dangerButton: {
     backgroundColor: COLORS.dangerLight,
@@ -937,6 +932,5 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: COLORS.white,
     fontSize: 15,
-    fontWeight: '700',
   },
 });

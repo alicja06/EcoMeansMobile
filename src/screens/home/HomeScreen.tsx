@@ -1,9 +1,9 @@
-﻿import { useState } from 'react';
+﻿
+import { useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,7 +24,9 @@ import { isDoneToday } from '@/lib/tasks';
 import { isScheduledOn, resolveCalendar } from '@/lib/schedule';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { TaskSettingsSheet } from '@/components/tasks/TaskSettingsSheet';
+import { AppText } from '@/components/ui/AppText';
 import { ProductImage } from '@/components/ui/ProductImage';
+import { fontFamilies } from '@/theme/typography';
 import { PRODUCTS } from '@/data/products';
 import { TIPS } from '@/data/tips';
 
@@ -98,10 +100,10 @@ export function HomeScreen() {
       >
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.date}>{formatFullDate(today)}</Text>
-            <Text style={styles.greeting}>
+            <AppText style={styles.date}>{formatFullDate(today)}</AppText>
+            <AppText style={styles.greeting}>
               {name ? `Dzień dobry, ${name}` : 'Dzień dobry'}
-            </Text>
+            </AppText>
           </View>
 
           <Pressable
@@ -117,9 +119,9 @@ export function HomeScreen() {
 
             {openShopping > 0 && (
               <View style={styles.shoppingBadge}>
-                <Text style={styles.shoppingBadgeText}>
+                <AppText style={styles.shoppingBadgeText}>
                   {openShopping}
-                </Text>
+                </AppText>
               </View>
             )}
           </Pressable>
@@ -128,16 +130,16 @@ export function HomeScreen() {
         <View style={styles.todayCard}>
           <View style={styles.todayLabel}>
             <Sparkles size={17} color="#e8efdf" />
-            <Text style={styles.todayLabelText}>Na dziś</Text>
+            <AppText style={styles.todayLabelText}>Na dziś</AppText>
           </View>
 
-          <Text style={styles.todayHeadline}>
+          <AppText style={styles.todayHeadline}>
             {todayTasks.length === 0
               ? 'Brak zadań na dziś'
               : doneCount === todayTasks.length
                 ? 'Wszystko gotowe'
                 : `Zostało ${todayTasks.length - doneCount} z ${todayTasks.length}`}
-          </Text>
+          </AppText>
 
           <View style={styles.progressTrack}>
             <View
@@ -153,20 +155,20 @@ export function HomeScreen() {
             />
           </View>
 
-          <Text style={styles.doneLabel}>
+          <AppText style={styles.doneLabel}>
             Wykonane: {doneCount}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Zadania na dziś</Text>
+          <AppText style={styles.sectionTitle}>Zadania na dziś</AppText>
 
           {todayTasks.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>
+              <AppText style={styles.emptyText}>
                 Nic do zrobienia. Możesz odpocząć albo dodać nowe zadanie
                 w sekcji Mój dom.
-              </Text>
+              </AppText>
             </View>
           ) : (
             <View style={styles.taskList}>
@@ -207,14 +209,14 @@ export function HomeScreen() {
 
         {carried.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <AppText style={styles.sectionTitle}>
               Z poprzednich dni
-            </Text>
+            </AppText>
 
-            <Text style={styles.carriedDescription}>
+            <AppText style={styles.carriedDescription}>
               Nic się nie dzieje, jeśli zostawisz je na później.
               Możesz je przesunąć, pominąć albo zmienić częstotliwość.
-            </Text>
+            </AppText>
 
             <View style={styles.taskList}>
               {carried.map((task) => (
@@ -257,9 +259,9 @@ export function HomeScreen() {
             ]}
           >
             <CalendarDays size={22} color={COLORS.green} />
-            <Text style={styles.quickActionText}>
+            <AppText style={styles.quickActionText}>
               Harmonogram sprzątania
-            </Text>
+            </AppText>
           </Pressable>
 
           <Pressable
@@ -270,14 +272,14 @@ export function HomeScreen() {
             ]}
           >
             <ShoppingCart size={22} color={COLORS.green} />
-            <Text style={styles.quickActionText}>
+            <AppText style={styles.quickActionText}>
               Lista zakupów
-            </Text>
+            </AppText>
           </Pressable>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Porada dnia</Text>
+          <AppText style={styles.sectionTitle}>Porada dnia</AppText>
 
           <Pressable
             onPress={() => navigate({ name: 'tip', tipId: tip.id })}
@@ -287,12 +289,12 @@ export function HomeScreen() {
             ]}
           >
             <View style={styles.recommendationContent}>
-              <Text style={styles.recommendationTitle}>
+              <AppText style={styles.recommendationTitle}>
                 {tip.title}
-              </Text>
-              <Text style={styles.recommendationDescription}>
+              </AppText>
+              <AppText style={styles.recommendationDescription}>
                 {tip.summary}
-              </Text>
+              </AppText>
             </View>
 
             <ChevronRight size={21} color={COLORS.green} />
@@ -300,7 +302,7 @@ export function HomeScreen() {
         </View>
 
         <View style={[styles.section, styles.lastSection]}>
-          <Text style={styles.sectionTitle}>Polecany produkt</Text>
+          <AppText style={styles.sectionTitle}>Polecany produkt</AppText>
 
           <Pressable
             onPress={() =>
@@ -317,15 +319,15 @@ export function HomeScreen() {
             />
 
             <View style={styles.productInfo}>
-              <Text style={styles.productName}>
+              <AppText style={styles.productName}>
                 {product.name}
-              </Text>
-              <Text style={styles.productDescription}>
+              </AppText>
+              <AppText style={styles.productDescription}>
                 {product.shortUse}
-              </Text>
-              <Text style={styles.productLink}>
+              </AppText>
+              <AppText style={styles.productLink}>
                 Zobacz kartę produktu
-              </Text>
+              </AppText>
             </View>
 
             <ChevronRight size={20} color={COLORS.green} />
@@ -366,13 +368,13 @@ const styles = StyleSheet.create({
   date: {
     color: COLORS.muted,
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fontFamilies.medium,
   },
   greeting: {
     marginTop: 3,
     color: COLORS.dark,
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   shoppingIconButton: {
     width: 46,
@@ -398,7 +400,7 @@ const styles = StyleSheet.create({
   shoppingBadgeText: {
     color: COLORS.white,
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   todayCard: {
     borderRadius: 25,
@@ -414,14 +416,14 @@ const styles = StyleSheet.create({
   todayLabelText: {
     color: '#e8efdf',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   todayHeadline: {
     marginTop: 12,
     color: COLORS.white,
     fontSize: 23,
     lineHeight: 30,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   progressTrack: {
     height: 9,
@@ -439,6 +441,7 @@ const styles = StyleSheet.create({
     marginTop: 9,
     color: '#e8efdf',
     fontSize: 12,
+    fontFamily: fontFamilies.regular,
   },
   section: {
     marginTop: 27,
@@ -447,7 +450,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: COLORS.dark,
     fontSize: 19,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   emptyCard: {
     borderRadius: 19,
@@ -459,6 +462,7 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     fontSize: 14,
     lineHeight: 21,
+    fontFamily: fontFamilies.regular,
   },
   taskList: {
     gap: 11,
@@ -476,6 +480,7 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     fontSize: 13,
     lineHeight: 20,
+    fontFamily: fontFamilies.regular,
   },
   quickActions: {
     flexDirection: 'row',
@@ -496,7 +501,7 @@ const styles = StyleSheet.create({
     color: COLORS.dark,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   recommendationCard: {
     flexDirection: 'row',
@@ -514,12 +519,13 @@ const styles = StyleSheet.create({
   recommendationTitle: {
     color: COLORS.dark,
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   recommendationDescription: {
     color: COLORS.muted,
     fontSize: 13,
     lineHeight: 19,
+    fontFamily: fontFamilies.regular,
   },
   productCard: {
     flexDirection: 'row',
@@ -537,18 +543,19 @@ const styles = StyleSheet.create({
   productName: {
     color: COLORS.dark,
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   productDescription: {
     color: COLORS.muted,
     fontSize: 12,
     lineHeight: 17,
+    fontFamily: fontFamilies.regular,
   },
   productLink: {
     marginTop: 3,
     color: COLORS.green,
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   lastSection: {
     marginBottom: 8,

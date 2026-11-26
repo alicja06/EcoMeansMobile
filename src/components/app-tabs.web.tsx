@@ -1,3 +1,4 @@
+
 import {
   Tabs,
   TabList,
@@ -9,11 +10,12 @@ import {
 import { SymbolView } from 'expo-symbols';
 import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
 
+import { AppText } from '@/components/ui/AppText';
 import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
 
 import { ExternalLink } from './external-link';
-import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
+import { fontFamilies } from '@/theme/typography';
 
 export default function AppTabs() {
   return (
@@ -37,13 +39,22 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
   const { ref: _ref, ...pressableProps } = props;
 
   return (
-    <Pressable {...pressableProps} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      {...pressableProps}
+      style={({ pressed }) => pressed && styles.pressed}
+    >
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+        style={styles.tabButtonView}
+      >
+        <AppText
+          style={[
+            styles.tabButtonText,
+            { color: isFocused ? Colors.light.text : Colors.light.tabIconDefault },
+          ]}
+        >
           {children}
-        </ThemedText>
+        </AppText>
       </ThemedView>
     </Pressable>
   );
@@ -56,15 +67,15 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Expo Starter
-        </ThemedText>
+        <AppText style={styles.brandText}>EcoMeans</AppText>
 
         {props.children}
 
         <ExternalLink href="https://docs.expo.dev" asChild>
           <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
+            <AppText style={[styles.linkText, { color: colors.tint }]}>
+              Docs
+            </AppText>
             <SymbolView
               tintColor={colors.text}
               name={{ ios: 'arrow.up.right.square', web: 'link' }}
@@ -98,6 +109,10 @@ const styles = StyleSheet.create({
   },
   brandText: {
     marginRight: 'auto',
+    fontFamily: fontFamilies.bold,
+  },
+  tabButtonText: {
+    fontFamily: fontFamilies.regular,
   },
   pressed: {
     opacity: 0.7,
@@ -113,5 +128,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
     marginLeft: Spacing.three,
+  },
+  linkText: {
+    fontFamily: fontFamilies.medium,
   },
 });

@@ -1,5 +1,13 @@
-﻿import { useState } from 'react';
+﻿
+import { useState } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { ListPlus, Plus } from 'lucide-react-native';
+
 import { ROOMS } from '@/data/rooms';
 import { ROOM_ICONS } from '@/components/icons/categoryIcons';
 import { useAppStore } from '@/store/AppStoreContext';
@@ -15,71 +23,215 @@ export function RoomsScreen() {
   const { state, updateHome } = useAppStore();
   const { navigate } = useNavigation();
   const [libraryOpen, setLibraryOpen] = useState(false);
+
   const today = todayISO();
   const calendar = resolveCalendar(state.home);
+
   const visibleRooms = ROOMS.filter((room) => {
-    if (!state.home.onboardingComplete || state.home.places.length === 0) return true;
-    return state.home.places.includes(room.id) || state.tasks.some((task) => task.roomId === room.id);
+    if (
+      !state.home.onboardingComplete ||
+      state.home.places.length === 0
+    ) {
+      return true;
+    }
+
+    return (
+      state.home.places.includes(room.id) ||
+      state.tasks.some((task) => task.roomId === room.id)
+    );
   });
 
   return (
-    <>
+    <View style={styles.container}>
       <ScreenHeader
-        title="MĂłj dom"
+        title="Mój dom"
         subtitle="Wybierz pomieszczenie"
         actions={
-          <button
-            type="button"
-            onClick={() => setLibraryOpen(true)}
-            aria-label="Biblioteka czynnoĹ›ci"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-600 text-white shadow-card transition active:scale-95"
+          <Pressable
+            onPress={() => setLibraryOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Biblioteka czynności"
+            style={({ pressed }) => [
+              styles.libraryButton,
+              pressed && styles.pressed,
+            ]}
           >
-            <ListPlus size={20} />
-          </button>
+            <ListPlus size={20} color="#ffffff" />
+          </Pressable>
         }
       />
-      <div className="grid grid-cols-2 gap-3 px-5 pt-2">
+
+      <View style={styles.roomsGrid}>
         {visibleRooms.map((room) => {
           const Icon = ROOM_ICONS[room.id];
-          const tasks = state.tasks.filter((task) => task.roomId === room.id && task.enabled);
-          const dueCount = tasks.filter((task) => isScheduledOn(task, today, calendar) && !isDoneToday(task, today)).length;
+
+          const tasks = state.tasks.filter(
+            (task) =>
+              task.roomId === room.id &&
+              task.enabled
+          );
+
+          const dueCount = tasks.filter(
+            (task) =>
+              isScheduledOn(task, today, calendar) &&
+              !isDoneToday(task, today)
+          ).length;
+
           return (
-            <button
+            <Pressable
               key={room.id}
-              type="button"
-              onClick={() => navigate({ name: 'room', roomId: room.id })}
-              className="flex flex-col gap-4 rounded-3xl bg-white p-4 text-left shadow-card transition active:scale-[0.97]"
+              onPress={() =>
+                navigate({
+                  name: 'room',
+                  roomId: room.id,
+                })
+              }
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.roomCard,
+                pressed && styles.roomCardPressed,
+              ]}
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-sage-100 text-sage-700">
-                <Icon size={24} />
-              </span>
-              <div>
-                <p className="font-bold text-ink-900">{room.name}</p>
-                <p className="mt-0.5 text-xs text-ink-500">
+              <View style={styles.roomIcon}>
+                <Icon size={24} color="#3b742f" />
+              </View>
+
+              <View style={styles.roomInfo}>
+                <Text style={styles.roomName}>
+                  {room.name}
+                </Text>
+
+                <Text style={styles.roomTaskCount}>
                   {taskCountLabel(tasks.length)}
-                  {dueCount > 0 && <span className="font-semibold text-brand-700"> Â· {dueCount} na dziĹ›</span>}
-                </p>
-              </div>
-            </button>
+                  {dueCount > 0 ? (
+                    <Text style={styles.dueCount}>
+                      {' · '}
+                      {dueCount} na dziś
+                    </Text>
+                  ) : null}
+                </Text>
+              </View>
+            </Pressable>
           );
         })}
-      </div>
-      <div className="px-5 pt-6">
+      </View>
+
+      <View style={styles.bottomSection}>
         <EmptyState
           icon={Plus}
           title="Dodawaj zadania z biblioteki"
-          text="Wybierz gotowe czynnoĹ›ci jednym klikniÄ™ciem albo dodaj wĹ‚asne w wybranym pomieszczeniu."
+          text="Wybierz gotowe czynności jednym kliknięciem albo dodaj własne w wybranym pomieszczeniu."
         />
-        <button
-          type="button"
-          onClick={() => updateHome({ onboardingComplete: false })}
-          className="mt-4 w-full rounded-2xl py-3 text-sm font-semibold text-brand-700"
+
+        <Pressable
+          onPress={() =>
+            updateHome({ onboardingComplete: false })
+          }
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.rebuildButton,
+            pressed && styles.pressed,
+          ]}
         >
-          ZmieĹ„ opis domu i uĹ‚ĂłĹĽ plan od nowa
-        </button>
-      </div>
-      {libraryOpen && <TaskLibrarySheet onClose={() => setLibraryOpen(false)} />}
-    </>
+          <Text style={styles.rebuildButtonText}>
+            Zmień opis domu i ułóż plan od nowa
+          </Text>
+        </Pressable>
+      </View>
+
+      {libraryOpen && (
+        <TaskLibrarySheet
+          onClose={() => setLibraryOpen(false)}
+        />
+      )}
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingBottom: 24,
+  },
+  libraryButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: '#3b742f',
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  roomsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  roomCard: {
+    width: '48%',
+    minHeight: 142,
+    justifyContent: 'space-between',
+    gap: 16,
+    padding: 16,
+    borderRadius: 24,
+    backgroundColor: '#ffffff',
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 5,
+  },
+  roomCardPressed: {
+    opacity: 0.75,
+  },
+  roomIcon: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: '#e8f0e3',
+  },
+  roomInfo: {
+    gap: 4,
+  },
+  roomName: {
+    color: '#4e4d4d',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  roomTaskCount: {
+    color: '#77766f',
+    fontSize: 12,
+  },
+  dueCount: {
+    color: '#3b742f',
+    fontWeight: '700',
+  },
+  bottomSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  rebuildButton: {
+    marginTop: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rebuildButtonText: {
+    color: '#3b742f',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});

@@ -1,4 +1,7 @@
+
 import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+
 import type { CleaningTask } from '@/types';
 import { useAppStore } from '@/store/AppStoreContext';
 import { useNavigation } from '@/store/NavigationContext';
@@ -8,32 +11,53 @@ import { horizonDates, planSubtitle } from '@/lib/schedule';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { WeekBoard } from '@/components/plan/WeekBoard';
 import { TaskSettingsSheet } from '@/components/tasks/TaskSettingsSheet';
+import { AppText } from '@/components/ui/AppText';
+import { fontFamilies } from '@/theme/typography';
 
 export function WeekPlanScreen() {
   const { state, toggleTaskDone } = useAppStore();
   const { goBack } = useNavigation();
   const { showToast } = useToast();
+
   const [selected, setSelected] = useState<CleaningTask | null>(null);
+
   const today = todayISO();
   const dates = horizonDates(today);
+
   const active = state.tasks.filter((task) => task.enabled);
+
   const upcoming = state.tasks
-    .filter((task) => task.enabled && task.dueDate > dates[dates.length - 1])
+    .filter(
+      (task) =>
+        task.enabled &&
+        task.dueDate > dates[dates.length - 1],
+    )
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
 
   return (
-    <>
-      <ScreenHeader title="Twój tydzień" subtitle={planSubtitle(state.home, today)} onBack={goBack} />
-      <div className="flex flex-col gap-5 px-5 pb-8 pt-2">
-        <p className="text-sm leading-relaxed text-ink-600">
-          Zadania są rozłożone według czasu, częstotliwości i tego, co masz w domu. Jeśli jakiś dzień nie wyjdzie, przesuń
+    <View style={styles.container}>
+      <ScreenHeader
+        title="Twój tydzień"
+        subtitle={planSubtitle(state.home, today)}
+        onBack={goBack}
+      />
+
+      <View style={styles.content}>
+        <AppText style={styles.description}>
+          Zadania są rozłożone według czasu, częstotliwości i tego,
+          co masz w domu. Jeśli jakiś dzień nie wyjdzie, przesuń
           czynność albo pomiń ją tym razem.
-        </p>
-        {state.home.specialNeeds.trim() && (
-          <p className="rounded-2xl bg-sand-50 px-4 py-3 text-sm leading-relaxed text-sand-800">
-            W planie jest miejsce na to: {state.home.specialNeeds.trim()}
-          </p>
-        )}
+        </AppText>
+
+        {state.home.specialNeeds.trim() ? (
+          <View style={styles.specialNeeds}>
+            <AppText style={styles.specialNeedsText}>
+              W planie jest miejsce na to:{' '}
+              {state.home.specialNeeds.trim()}
+            </AppText>
+          </View>
+        ) : null}
+
         <WeekBoard
           tasks={active}
           home={state.home}
@@ -43,31 +67,111 @@ export function WeekPlanScreen() {
           interactive
           onToggle={(task, done) => {
             toggleTaskDone(task.id);
-            showToast(done ? 'Cofnięto zaznaczenie' : 'Zrobione.');
+            showToast(
+              done ? 'Cofnięto zaznaczenie' : 'Zrobione.',
+            );
           }}
-          onOpen={(task) => setSelected(state.tasks.find((item) => item.id === task.id) ?? task)}
+          onOpen={(task) =>
+            setSelected(
+              state.tasks.find((item) => item.id === task.id) ??
+                task,
+            )
+          }
         />
-        {upcoming.length > 0 && (
-          <section>
-            <h2 className="mb-2 text-sm font-bold text-ink-700">Później, bez pośpiechu</h2>
-            <ul className="flex flex-col gap-2">
+
+        {upcoming.length > 0 ? (
+          <View style={styles.upcomingSection}>
+            <AppText style={styles.sectionTitle}>
+              Później, bez pośpiechu
+            </AppText>
+
+            <View style={styles.upcomingList}>
               {upcoming.slice(0, 8).map((task) => (
-                <li key={task.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelected(task)}
-                    className="w-full rounded-2xl bg-white px-4 py-3 text-left shadow-card"
-                  >
-                    <span className="block text-sm font-semibold text-ink-900">{task.title}</span>
-                    <span className="mt-0.5 block text-xs text-ink-500">{task.scheduleNote ?? 'Rzadsza czynność'}</span>
-                  </button>
-                </li>
+                <Pressable
+                  key={task.id}
+                  onPress={() => setSelected(task)}
+                  accessibilityRole="button"
+                  style={styles.upcomingItem}
+                >
+                  <AppText style={styles.upcomingTitle}>
+                    {task.title}
+                  </AppText>
+                  <AppText style={styles.upcomingNote}>
+                    {task.scheduleNote ?? 'Rzadsza czynność'}
+                  </AppText>
+                </Pressable>
               ))}
-            </ul>
-          </section>
-        )}
-      </div>
-      {selected && <TaskSettingsSheet task={selected} onClose={() => setSelected(null)} />}
-    </>
+            </View>
+          </View>
+        ) : null}
+      </View>
+
+      {selected ? (
+        <TaskSettingsSheet
+          task={selected}
+          onClose={() => setSelected(null)}
+        />
+      ) : null}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5e6ce',
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 32,
+    gap: 16,
+  },
+  description: {
+    color: '#77766f',
+    fontSize: 13,
+    lineHeight: 21,
+    fontFamily: fontFamilies.regular,
+  },
+  specialNeeds: {
+    borderRadius: 16,
+    backgroundColor: '#f8f2e8',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  specialNeedsText: {
+    color: '#4e4d4d',
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: fontFamilies.regular,
+  },
+  upcomingSection: {
+    marginTop: 8,
+  },
+  sectionTitle: {
+    marginBottom: 10,
+    color: '#4e4d4d',
+    fontSize: 14,
+    fontFamily: fontFamilies.bold,
+  },
+  upcomingList: {
+    gap: 8,
+  },
+  upcomingItem: {
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    padding: 16,
+    elevation: 1,
+  },
+  upcomingTitle: {
+    color: '#4e4d4d',
+    fontSize: 14,
+    lineHeight: 21,
+    fontFamily: fontFamilies.medium,
+  },
+  upcomingNote: {
+    color: '#77766f',
+    fontSize: 12,
+    fontFamily: fontFamilies.regular,
+  },
+});

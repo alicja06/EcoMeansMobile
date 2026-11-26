@@ -1,29 +1,43 @@
-﻿import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react-native";
+﻿import type { ReactNode } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
+
+import { AppText } from '@/components/ui/AppText';
 
 export function ProgressBar({
   value,
   max,
-  className = "",
+  className: _className = '',
 }: {
   value: number;
   max: number;
   className?: string;
 }) {
-  const percent = max > 0 ? Math.round((value / max) * 100) : 0;
+  const percent =
+    max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
+
   return (
-    <div
-      role="progressbar"
-      aria-valuemin={0}
-      aria-valuemax={max}
-      aria-valuenow={value}
-      className={`h-2.5 w-full overflow-hidden rounded-full bg-brand-100 ${className}`}
+    <View
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityValue={{
+        min: 0,
+        max,
+        now: Math.min(max, Math.max(0, value)),
+      }}
+      style={styles.progressTrack}
     >
-      <div
-        className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-500 ease-out"
-        style={{ width: `${percent}%` }}
+      <View
+        style={[
+          styles.progressFill,
+          { width: `${percent}%` },
+        ]}
       />
-    </div>
+    </View>
   );
 }
 
@@ -37,22 +51,24 @@ export function Toggle({
   label: string;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300 ${
-        checked ? "bg-brand-600" : "bg-ink-300"
-      }`}
+    <Pressable
+      onPress={() => onChange(!checked)}
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityState={{ checked }}
+      style={({ pressed }) => [
+        styles.toggleTrack,
+        checked ? styles.toggleActive : styles.toggleInactive,
+        pressed && styles.pressed,
+      ]}
     >
-      <span
-        className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform duration-300 ${
-          checked ? "translate-x-[20px]" : "translate-x-0"
-        }`}
+      <View
+        style={[
+          styles.toggleThumb,
+          checked ? styles.toggleThumbActive : styles.toggleThumbInactive,
+        ]}
       />
-    </button>
+    </Pressable>
   );
 }
 
@@ -74,33 +90,49 @@ export function SegmentedControl<T extends string>({
   label: string;
 }) {
   return (
-    <div
-      role="tablist"
-      aria-label={label}
-      className="flex rounded-2xl bg-ink-100 p-1"
+    <View
+      accessibilityLabel={label}
+      style={styles.segmentContainer}
     >
       {options.map((option) => {
         const active = option.value === value;
         const Icon = option.icon;
+
         return (
-          <button
+          <Pressable
             key={option.value}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            onClick={() => onChange(option.value)}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm transition-all duration-200 ${
-              active
-                ? "bg-white font-bold text-ink-900 shadow-card"
-                : "font-semibold text-ink-500 hover:text-ink-700"
-            }`}
+            onPress={() => onChange(option.value)}
+            accessibilityRole="tab"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected: active }}
+            style={({ pressed }) => [
+              styles.segment,
+              active ? styles.segmentActive : styles.segmentInactive,
+              pressed && styles.pressed,
+            ]}
           >
-            {Icon && <Icon size={16} />}
-            {option.label}
-          </button>
+            {Icon ? (
+              <Icon
+                size={16}
+                color={active ? '#4e4d4d' : '#77766f'}
+              />
+            ) : null}
+
+            <AppText
+           
+              style={[
+                styles.segmentText,
+                active
+                  ? styles.segmentTextActive
+                  : styles.segmentTextInactive,
+              ]}
+            >
+              {option.label}
+            </AppText>
+          </Pressable>
         );
       })}
-    </div>
+    </View>
   );
 }
 
@@ -116,25 +148,168 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-3xl border border-dashed border-ink-300 bg-white/60 px-6 py-10 text-center">
-      <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-600">
-        <Icon size={26} />
-      </span>
-      <h3 className="text-base font-bold text-ink-900">{title}</h3>
-      <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-ink-500">
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIcon}>
+        <Icon size={26} color="#3b742f" />
+      </View>
+
+      <AppText style={styles.emptyTitle}>
+        {title}
+      </AppText>
+
+      <AppText style={styles.emptyText}>
         {text}
-      </p>
-      {action && <div className="mt-5">{action}</div>}
-    </div>
+      </AppText>
+
+      {action ? (
+        <View style={styles.emptyAction}>
+          {action}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
 export function DemoNotice({ text }: { text: string }) {
   return (
-    <p className="rounded-2xl border border-sand-200 bg-sand-50 px-4 py-3 text-xs leading-relaxed text-sand-800">
-      <span className="font-bold">Dane demonstracyjne. </span>
+    <AppText style={styles.noticeText}>
+      <AppText style={styles.noticeBold}>
+        Dane demonstracyjne.
+      </AppText>
+      {' '}
       {text}
-    </p>
+    </AppText>
   );
 }
 
+const styles = StyleSheet.create({
+  progressTrack: {
+    width: '100%',
+    height: 10,
+    overflow: 'hidden',
+    borderRadius: 999,
+    backgroundColor: '#e5eddf',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: '#73a62d',
+  },
+
+  toggleTrack: {
+    width: 48,
+    height: 28,
+    flexShrink: 0,
+    justifyContent: 'center',
+    borderRadius: 999,
+    padding: 2,
+  },
+  toggleActive: {
+    backgroundColor: '#3b742f',
+  },
+  toggleInactive: {
+    backgroundColor: '#b8b6af',
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    elevation: 2,
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end',
+  },
+  toggleThumbInactive: {
+    alignSelf: 'flex-start',
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+
+  segmentContainer: {
+    flexDirection: 'row',
+    borderRadius: 16,
+    padding: 4,
+    backgroundColor: '#eeece7',
+    gap: 4,
+  },
+  segment: {
+    flex: 1,
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 9,
+    borderRadius: 12,
+  },
+  segmentActive: {
+    backgroundColor: '#ffffff',
+    elevation: 2,
+  },
+  segmentInactive: {
+    backgroundColor: 'transparent',
+  },
+  segmentText: {
+    fontSize: 13,
+  },
+  segmentTextActive: {
+    color: '#4e4d4d',
+  },
+  segmentTextInactive: {
+    color: '#77766f',
+  },
+
+  emptyContainer: {
+    alignItems: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#c9c6bd',
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 28,
+    backgroundColor: '#edf4e9',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    color: '#4e4d4d',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  emptyText: {
+    maxWidth: 280,
+    marginTop: 6,
+    color: '#77766f',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  emptyAction: {
+    marginTop: 20,
+  },
+
+  noticeText: {
+    borderWidth: 1,
+    borderColor: '#e9d9b9',
+    borderRadius: 16,
+    backgroundColor: '#fbf4e8',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: '#80643c',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  noticeBold: {
+    color: '#80643c',
+  },
+});

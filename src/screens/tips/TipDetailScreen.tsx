@@ -1,4 +1,13 @@
-﻿import { Bookmark, Check } from 'lucide-react-native';
+﻿
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Bookmark, Check } from 'lucide-react-native';
+
 import { findTip, findTipCategory } from '@/data/tips';
 import { useAppStore } from '@/store/AppStoreContext';
 import { useNavigation } from '@/store/NavigationContext';
@@ -9,50 +18,172 @@ export function TipDetailScreen({ tipId }: { tipId: string }) {
   const { state, toggleSavedTip } = useAppStore();
   const { goBack } = useNavigation();
   const { showToast } = useToast();
+
   const tip = findTip(tipId);
 
-  if (!tip) return <ScreenHeader title="Nie znaleziono porady" onBack={goBack} />;
+  if (!tip) {
+    return (
+      <View style={styles.container}>
+        <ScreenHeader
+          title="Nie znaleziono porady"
+          onBack={goBack}
+        />
+      </View>
+    );
+  }
 
   const saved = state.savedTipIds.includes(tip.id);
   const category = findTipCategory(tip.categoryId);
 
   return (
-    <>
+    <View style={styles.container}>
       <ScreenHeader
         title={category?.name ?? 'Porada'}
         onBack={goBack}
         actions={
-          <button
-            type="button"
-            aria-label={saved ? 'UsuĹ„ z zapisanych' : 'Zapisz poradÄ™'}
-            aria-pressed={saved}
-            onClick={() => {
+          <Pressable
+            onPress={() => {
               toggleSavedTip(tip.id);
-              showToast(saved ? 'UsuniÄ™to z zapisanych' : 'Zapisano poradÄ™');
+              showToast(
+                saved
+                  ? 'Usunięto z zapisanych'
+                  : 'Zapisano poradę'
+              );
             }}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-brand-700 shadow-card transition active:scale-95"
+            accessibilityRole="button"
+            accessibilityLabel={
+              saved ? 'Usuń z zapisanych' : 'Zapisz poradę'
+            }
+            accessibilityState={{ selected: saved }}
+            style={({ pressed }) => [
+              styles.bookmarkButton,
+              pressed && styles.pressed,
+            ]}
           >
-            <Bookmark size={20} className={saved ? 'fill-brand-600' : ''} />
-          </button>
+            <Bookmark
+              size={20}
+              color="#3b742f"
+              fill={saved ? '#3b742f' : 'transparent'}
+            />
+          </Pressable>
         }
       />
-      <article className="px-5 pt-2">
-        <p className="text-xs font-semibold text-brand-700">{tip.readMinutes} min czytania</p>
-        <h2 className="mt-2 text-2xl font-bold leading-tight text-ink-900">{tip.title}</h2>
-        <p className="mt-4 text-[15px] leading-relaxed text-ink-600">{tip.intro}</p>
 
-        <ul className="mt-6 flex flex-col gap-3">
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.readTime}>
+          {tip.readMinutes} min czytania
+        </Text>
+
+        <Text style={styles.title}>
+          {tip.title}
+        </Text>
+
+        <Text style={styles.intro}>
+          {tip.intro}
+        </Text>
+
+        <View style={styles.points}>
           {tip.points.map((point) => (
-            <li key={point} className="flex gap-3 rounded-2xl bg-white p-4 text-sm leading-relaxed text-ink-700 shadow-card">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
-                <Check size={14} strokeWidth={3} />
-              </span>
-              {point}
-            </li>
+            <View key={point} style={styles.pointCard}>
+              <View style={styles.checkCircle}>
+                <Check
+                  size={14}
+                  color="#3b742f"
+                  strokeWidth={3}
+                />
+              </View>
+
+              <Text style={styles.pointText}>
+                {point}
+              </Text>
+            </View>
           ))}
-        </ul>
-      </article>
-    </>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 32,
+  },
+  bookmarkButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: '#ffffff',
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  pressed: {
+    opacity: 0.65,
+  },
+  readTime: {
+    color: '#3b742f',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  title: {
+    marginTop: 8,
+    color: '#4e4d4d',
+    fontSize: 25,
+    fontWeight: '700',
+    lineHeight: 32,
+  },
+  intro: {
+    marginTop: 16,
+    color: '#77766f',
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  points: {
+    marginTop: 24,
+    gap: 12,
+  },
+  pointCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 5,
+  },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: '#edf4e9',
+  },
+  pointText: {
+    flex: 1,
+    color: '#4e4d4d',
+    fontSize: 14,
+    lineHeight: 21,
+  },
+});

@@ -6,10 +6,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from "react-native";
+import { AppText } from "@/components/ui/AppText";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
@@ -222,7 +222,9 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
         >
           <View style={styles.container}>
             <Pressable onPress={onBack} style={styles.backButton}>
-              <Text style={styles.backText}>← Wróć</Text>
+              <AppText style={styles.backText}>
+                ← Wróć
+              </AppText>
             </Pressable>
 
             <View style={styles.header}>
@@ -233,21 +235,21 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                 accessibilityLabel="EcoMeans"
               />
 
-              <Text style={styles.heading}>
+              <AppText style={styles.heading}>
                 {forgotPassword
                   ? "Odzyskaj dostęp"
                   : mode === "login"
                     ? "Witaj ponownie!"
                     : "Dołącz do EcoMeans"}
-              </Text>
+              </AppText>
 
-              <Text style={styles.subtitle}>
+              <AppText style={styles.subtitle}>
                 {forgotPassword
                   ? "Podaj adres e-mail powiązany z Twoim kontem."
                   : mode === "login"
                     ? "Zaloguj się do swojego domu."
                     : "Utwórz konto i zadbaj o dom po swojemu."}
-              </Text>
+              </AppText>
             </View>
 
             {!forgotPassword ? (
@@ -256,35 +258,37 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                   onPress={() => changeMode("login")}
                   style={[styles.tab, mode === "login" && styles.activeTab]}
                 >
-                  <Text
+                  <AppText
                     style={[
                       styles.tabText,
                       mode === "login" && styles.activeTabText,
                     ]}
                   >
                     Logowanie
-                  </Text>
+                  </AppText>
                 </Pressable>
 
                 <Pressable
                   onPress={() => changeMode("register")}
                   style={[styles.tab, mode === "register" && styles.activeTab]}
                 >
-                  <Text
+                  <AppText
                     style={[
                       styles.tabText,
                       mode === "register" && styles.activeTabText,
                     ]}
                   >
                     Rejestracja
-                  </Text>
+                  </AppText>
                 </Pressable>
               </View>
             ) : null}
 
             <View style={styles.form}>
               <View style={styles.field}>
-                <Text style={styles.label}>Adres e-mail</Text>
+                <AppText style={styles.label}>
+                  Adres e-mail
+                </AppText>
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
@@ -302,7 +306,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
 
               {!forgotPassword ? (
                 <View style={styles.field}>
-                  <Text style={styles.label}>Hasło</Text>
+                  <AppText style={styles.label}>Hasło</AppText>
                   <TextInput
                     value={password}
                     onChangeText={setPassword}
@@ -331,15 +335,15 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                       disabled={loading}
                       style={{ alignSelf: "flex-end", paddingVertical: 4 }}
                     >
-                      <Text
+                      <AppText
+
                         style={{
                           color: "#3b742f",
                           fontSize: 13,
-                          fontFamily: "Sen",
                         }}
                       >
                         Nie pamiętasz hasła?
-                      </Text>
+                      </AppText>
                     </Pressable>
                   ) : null}
                 </View>
@@ -347,13 +351,13 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
 
               {error ? (
                 <View style={styles.errorBox}>
-                  <Text style={styles.errorText}>{error}</Text>
+                  <AppText style={styles.errorText}>{error}</AppText>
                 </View>
               ) : null}
 
               {message ? (
                 <View style={styles.messageBox}>
-                  <Text style={styles.messageText}>{message}</Text>
+                  <AppText style={styles.messageText}>{message}</AppText>
                 </View>
               ) : null}
 
@@ -366,7 +370,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                   loading && styles.disabledButton,
                 ]}
               >
-                <Text style={styles.submitButtonText}>
+                <AppText style={styles.submitButtonText}>
                   {loading
                     ? "Chwileczkę..."
                     : forgotPassword
@@ -374,14 +378,14 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                       : mode === "login"
                         ? "Zaloguj się"
                         : "Utwórz konto"}
-                </Text>
+                </AppText>
               </Pressable>
 
               {!forgotPassword ? (
                 <>
                   <View style={styles.divider}>
                     <View style={styles.dividerLine} />
-                    <Text style={styles.dividerText}>lub</Text>
+                    <AppText style={styles.dividerText}>lub</AppText>
                     <View style={styles.dividerLine} />
                   </View>
 
@@ -400,9 +404,9 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                       resizeMode="contain"
                       accessibilityLabel="Google"
                     />
-                    <Text style={styles.googleButtonText}>
+                    <AppText style={styles.googleButtonText}>
                       Kontynuuj z Google
-                    </Text>
+                    </AppText>
                   </Pressable>
                 </>
               ) : null}
@@ -423,101 +427,93 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-  flexGrow: 1,
-  justifyContent: "center",
-  paddingHorizontal: 22,
-  paddingTop: 8,
-  paddingBottom: 16,
-},
-container: {
-  width: "100%",
-  maxWidth: 420,
-  alignSelf: "center",
-},
-backButton: {
-  alignSelf: "flex-start",
-  marginBottom: 14,
-  paddingVertical: 5,
-},
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 22,
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  container: {
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    marginBottom: 14,
+    paddingVertical: 5,
+  },
   backText: {
     color: "#3b742f",
     fontSize: 14,
-    fontWeight: "600",
-    fontFamily: "Sen",
   },
   header: {
-  alignItems: "center",
-  marginBottom: 18,
-},
-logo: {
-  width: 140,
-  height: 72,
-  marginBottom: 10,
-},
-heading: {
-  color: "#3b742f",
-  fontSize: 27,
-  textAlign: "center",
-  marginBottom: 5,
-  fontFamily: "Sen",
-},
-subtitle: {
-  color: "#4e4d4d",
-  fontSize: 13,
-  textAlign: "center",
-  fontFamily: "Sen",
-},
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  logo: {
+    width: 140,
+    height: 72,
+    marginBottom: 10,
+  },
+  heading: {
+    color: "#3b742f",
+    fontSize: 27,
+    textAlign: "center",
+    marginBottom: 5,
+  },
+  subtitle: {
+    color: "#4e4d4d",
+    fontSize: 13,
+    textAlign: "center",
+  },
   tabs: {
-  flexDirection: "row",
-  backgroundColor: "rgba(255,255,255,0.6)",
-  borderRadius: 14,
-  padding: 3,
-  marginBottom: 14,
-},
-tab: {
-  flex: 1,
-  alignItems: "center",
-  justifyContent: "center",
-  paddingVertical: 10,
-  borderRadius: 11,
-},
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.6)",
+    borderRadius: 14,
+    padding: 3,
+    marginBottom: 14,
+  },
+  tab: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 11,
+  },
   activeTab: {
     backgroundColor: "#3b742f",
   },
   tabText: {
     color: "#4e4d4d",
     fontSize: 14,
-    fontWeight: "700",
-    fontFamily: "Sen",
   },
   activeTabText: {
     color: "#ffffff",
   },
-form: {
-  backgroundColor: "rgba(255,255,255,0.8)",
-  borderRadius: 22,
-  padding: 16,
-  gap: 12,
-},
-field: {
-  gap: 6,
-},
-input: {
-  backgroundColor: "#ffffff",
-  borderWidth: 1,
-  borderColor: "#d9d0bd",
-  borderRadius: 12,
-  paddingHorizontal: 14,
-  paddingVertical: 11,
-  color: "#4e4d4d",
-  fontSize: 14,
-  fontFamily: "Sen",
-},
+  form: {
+    backgroundColor: "rgba(255,255,255,0.8)",
+    borderRadius: 22,
+    padding: 16,
+    gap: 12,
+  },
+  field: {
+    gap: 6,
+  },
+  input: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#d9d0bd",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    color: "#4e4d4d",
+    fontSize: 14,
+    fontFamily: "Sen",
+  },
   label: {
     color: "#4e4d4d",
     fontSize: 14,
-    fontWeight: "600",
-    fontFamily: "Sen",
   },
   errorBox: {
     backgroundColor: "#fef2f2",
@@ -527,7 +523,6 @@ input: {
   errorText: {
     color: "#b91c1c",
     fontSize: 13,
-    fontFamily: "Sen",
   },
   messageBox: {
     backgroundColor: "#f0fdf4",
@@ -537,33 +532,32 @@ input: {
   messageText: {
     color: "#166534",
     fontSize: 13,
-    fontFamily: "Sen",
   },
   submitButton: {
-  backgroundColor: "#3b742f",
-  borderRadius: 15,
-  paddingHorizontal: 20,
-  paddingVertical: 13,
-  alignItems: "center",
-  justifyContent: "center",
-},
-divider: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 10,
-},
-googleButton: {
-  backgroundColor: "#ffffff",
-  borderWidth: 1,
-  borderColor: "#747775",
-  borderRadius: 15,
-  paddingHorizontal: 20,
-  paddingVertical: 12,
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 10,
-},
+    backgroundColor: "#3b742f",
+    borderRadius: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  googleButton: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#747775",
+    borderRadius: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
   submitButtonPressed: {
     backgroundColor: "#315f27",
     transform: [{ scale: 0.98 }],
@@ -574,8 +568,6 @@ googleButton: {
   submitButtonText: {
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: "700",
-    fontFamily: "Sen",
   },
   dividerLine: {
     flex: 1,
@@ -585,7 +577,6 @@ googleButton: {
   dividerText: {
     color: "#999184",
     fontSize: 13,
-    fontFamily: "Sen",
   },
   googleButtonPressed: {
     backgroundColor: "#f5f1e9",
@@ -598,7 +589,5 @@ googleButton: {
   googleButtonText: {
     color: "#1f1f1f",
     fontSize: 15,
-    fontWeight: "700",
-    fontFamily: "Sen",
   },
 });

@@ -1,11 +1,11 @@
-﻿
-import { StyleSheet, Text, View } from 'react-native';
+﻿import { StyleSheet, View } from 'react-native';
 import {
   CookingPot,
   Bath,
   SprayCan,
   Utensils,
 } from 'lucide-react-native';
+import { AppText } from '@/components/ui/AppText';
 
 import type { ProductCategoryId } from '@/types';
 
@@ -79,7 +79,7 @@ export function ProductImage({
 
       {size === 'lg' && (
         <View style={styles.labelContainer}>
-          <Text style={styles.label}>{category.label}</Text>
+          <AppText style={styles.label}>{category.label}</AppText>
         </View>
       )}
     </View>
@@ -105,6 +105,5 @@ const styles = StyleSheet.create({
   label: {
     color: '#4e4d4d',
     fontSize: 12,
-    fontWeight: '600',
   },
 });

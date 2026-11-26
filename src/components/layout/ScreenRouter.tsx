@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { ScrollView, View, StyleSheet } from 'react-native';
+
 import { useNavigation } from '@/store/NavigationContext';
 import { HomeScreen } from '@/screens/home/HomeScreen';
 import { RoomsScreen } from '@/screens/rooms/RoomsScreen';
@@ -45,17 +46,31 @@ function renderRoute(route: Route) {
 
 export function ScreenRouter() {
   const { route } = useNavigation();
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-  }, [route]);
 
   return (
-    <div ref={scrollRef} className="app-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-28">
-      <div key={JSON.stringify(route)} className="animate-rise-in">
+    <ScrollView
+      key={JSON.stringify(route)}
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.screen}>
         {renderRoute(route)}
-      </div>
-    </div>
+      </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: 12,
+  },
+  screen: {
+    flex: 1,
+  },
+});
