@@ -1,18 +1,18 @@
-﻿
-import {
+﻿import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { Bookmark, Check } from 'lucide-react-native';
 
+import { AppText } from '@/components/ui/AppText';
 import { findTip, findTipCategory } from '@/data/tips';
 import { useAppStore } from '@/store/AppStoreContext';
 import { useNavigation } from '@/store/NavigationContext';
 import { useToast } from '@/store/ToastContext';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { fontFamilies } from '@/theme/typography';
 
 export function TipDetailScreen({ tipId }: { tipId: string }) {
   const { state, toggleSavedTip } = useAppStore();
@@ -74,17 +74,17 @@ export function TipDetailScreen({ tipId }: { tipId: string }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.readTime}>
+        <AppText style={styles.readTime}>
           {tip.readMinutes} min czytania
-        </Text>
+        </AppText>
 
-        <Text style={styles.title}>
+        <AppText style={styles.title}>
           {tip.title}
-        </Text>
+        </AppText>
 
-        <Text style={styles.intro}>
+        <AppText style={styles.intro}>
           {tip.intro}
-        </Text>
+        </AppText>
 
         <View style={styles.points}>
           {tip.points.map((point) => (
@@ -97,9 +97,9 @@ export function TipDetailScreen({ tipId }: { tipId: string }) {
                 />
               </View>
 
-              <Text style={styles.pointText}>
+              <AppText style={styles.pointText}>
                 {point}
-              </Text>
+              </AppText>
             </View>
           ))}
         </View>
@@ -139,19 +139,20 @@ const styles = StyleSheet.create({
   readTime: {
     color: '#3b742f',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fontFamilies.medium,
   },
   title: {
     marginTop: 8,
     color: '#4e4d4d',
     fontSize: 25,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
     lineHeight: 32,
   },
   intro: {
     marginTop: 16,
     color: '#77766f',
     fontSize: 15,
+    fontFamily: fontFamilies.regular,
     lineHeight: 24,
   },
   points: {
@@ -184,6 +185,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#4e4d4d',
     fontSize: 14,
+    fontFamily: fontFamilies.regular,
     lineHeight: 21,
   },
 });

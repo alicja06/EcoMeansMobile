@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import {
@@ -21,10 +20,16 @@ import { useNavigation } from '@/store/NavigationContext';
 import { todayISO } from '@/lib/dates';
 import { compareByDueDate, isDoneToday } from '@/lib/tasks';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { AppText } from '@/components/ui/AppText';
 import { EmptyState } from '@/components/ui/controls';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { AddTaskSheet } from '@/screens/rooms/AddTaskSheet';
 import { TaskSettingsSheet } from '@/components/tasks/TaskSettingsSheet';
+import {
+  getHouseholdMemberLabel,
+  useHouseholdMembers,
+} from '@/hooks/useHouseholdMembers';
+import { fontFamilies } from '@/theme/typography';
 
 export function RoomDetailScreen({
   roomId,
@@ -34,6 +39,7 @@ export function RoomDetailScreen({
   const { state, toggleTaskDone } = useAppStore();
   const { goBack } = useNavigation();
   const { showToast } = useToast();
+  const { members } = useHouseholdMembers();
 
   const [adding, setAdding] = useState(false);
   const [selected, setSelected] = useState<CleaningTask | null>(null);
@@ -89,13 +95,13 @@ export function RoomDetailScreen({
           </View>
 
           <View style={styles.infoText}>
-            <Text style={styles.infoTitle}>
+            <AppText style={styles.infoTitle}>
               Zadania w pomieszczeniu
-            </Text>
+            </AppText>
 
-            <Text style={styles.infoDescription}>
+            <AppText style={styles.infoDescription}>
               Zaznacz, gdy coś zrobisz. Brak wykonania nikogo nie karze.
-            </Text>
+            </AppText>
           </View>
         </View>
 
@@ -109,9 +115,9 @@ export function RoomDetailScreen({
         >
           <Plus size={18} color="#ffffff" />
 
-          <Text style={styles.addButtonText}>
+          <AppText style={styles.addButtonText}>
             Dodaj zadanie
-          </Text>
+          </AppText>
         </Pressable>
 
         {tasks.length === 0 ? (
@@ -129,6 +135,10 @@ export function RoomDetailScreen({
                 <TaskRow
                   key={task.id}
                   task={task}
+                  assignedToLabel={getHouseholdMemberLabel(
+                    members,
+                    task.assignedTo,
+                  )}
                   today={today}
                   done={done}
                   onToggle={() => {
@@ -164,9 +174,9 @@ export function RoomDetailScreen({
 
         {paused.length > 0 ? (
           <View style={styles.pausedSection}>
-            <Text style={styles.pausedTitle}>
+            <AppText style={styles.pausedTitle}>
               Wyłączone
-            </Text>
+            </AppText>
 
             <View style={styles.pausedList}>
               {paused.map((task) => (
@@ -179,9 +189,9 @@ export function RoomDetailScreen({
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text style={styles.pausedTaskText}>
+                  <AppText style={styles.pausedTaskText}>
                     {task.title}
-                  </Text>
+                  </AppText>
                 </Pressable>
               ))}
             </View>
@@ -243,12 +253,13 @@ const styles = StyleSheet.create({
   infoTitle: {
     color: '#4e4d4d',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   infoDescription: {
     color: '#77766f',
     fontSize: 12,
     lineHeight: 18,
+    fontFamily: fontFamilies.regular,
   },
   addButton: {
     minHeight: 50,
@@ -263,7 +274,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   taskList: {
     gap: 12,
@@ -285,7 +296,7 @@ const styles = StyleSheet.create({
   pausedTitle: {
     color: '#4e4d4d',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   pausedList: {
     gap: 8,
@@ -300,7 +311,7 @@ const styles = StyleSheet.create({
   pausedTaskText: {
     color: '#77766f',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamilies.medium,
   },
   pressed: {
     opacity: 0.75,

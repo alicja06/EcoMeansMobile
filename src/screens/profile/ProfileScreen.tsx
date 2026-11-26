@@ -2,22 +2,29 @@
 import {
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
-  TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '@/components/ui/AppText';
+import { AppTextInput } from '@/components/ui/AppTextInput';
 import {
   Bell,
   ChevronRight,
   Info,
+  LogOut,
   Shield,
   Trash2,
   User,
+  Users,
 } from 'lucide-react-native';
 
+import { useAuth } from '@/auth/AuthContext';
+import { useHousehold } from '@/auth/HouseholdContext';
 import { dayPartsLabel, timeBudgetLabel } from '@/data/home';
+import { supabase } from '@/lib/supabase';
 import { useAppStore } from '@/store/AppStoreContext';
 import { useNavigation } from '@/store/NavigationContext';
 import { useToast } from '@/store/ToastContext';
@@ -38,13 +45,20 @@ const COLORS = {
 };
 
 export function ProfileScreen() {
-  const { state, updateProfile, resetState } = useAppStore();
-  const { navigate, startPlanEditing } = useNavigation();
+  const { state, updateProfile } = useAppStore();
+  const { navigate, resetTo, startPlanEditing } = useNavigation();
+  const { signOut } = useAuth();
+  const { householdId } = useHousehold();
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
 
   const [nameDraft, setNameDraft] = useState(state.profile.name);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [accountAction, setAccountAction] = useState<
+    'signOut' | 'deleteAccount' | null
+  >(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
 
   const favorites = PRODUCTS.filter((product) =>
     state.favoriteProductIds.includes(product.id),
@@ -67,17 +81,67 @@ export function ProfileScreen() {
     showToast('Zapisano imię');
   }
 
-  function handleReset() {
-    if (!confirmReset) {
-      setConfirmReset(true);
+  function closeAccount() {
+    if (accountAction) return;
+
+    setAccountOpen(false);
+    setConfirmDeleteAccount(false);
+    setAccountError(null);
+  }
+
+  async function handleSignOut() {
+    setAccountAction('signOut');
+    setAccountError(null);
+
+    try {
+      await signOut();
+      setAccountOpen(false);
+      setAccountAction(null);
+      resetTo({ name: 'home' });
+    } catch (error) {
+      console.error('Nie udało się wylogować:', error);
+      setAccountAction(null);
+      setAccountError('Nie udało się wylogować. Spróbuj ponownie.');
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setAccountAction('deleteAccount');
+    setAccountError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke<{
+        deleted: boolean;
+      }>('delete-account');
+
+      if (error) throw error;
+      if (!data?.deleted) {
+        throw new Error('Serwer nie potwierdził usunięcia konta.');
+      }
+    } catch (error) {
+      console.error('Nie udało się usunąć konta:', error);
+      setAccountAction(null);
+      setAccountError(
+        'Nie udało się usunąć konta. Sprawdź połączenie i spróbuj ponownie.',
+      );
       return;
     }
 
-    resetState();
-    setConfirmReset(false);
-    setAccountOpen(false);
-    setNameDraft('');
-    showToast('Dane prototypu zostały zresetowane');
+    try {
+      await signOut('local');
+      setAccountOpen(false);
+      setAccountAction(null);
+      resetTo({ name: 'home' });
+    } catch (error) {
+      console.error(
+        'Konto usunięto, ale nie udało się wyczyścić sesji:',
+        error,
+      );
+      setAccountAction(null);
+      setAccountError(
+        'Konto zostało usunięte, ale nie udało się zakończyć sesji. Uruchom ponownie aplikację.',
+      );
+    }
   }
 
   return (
@@ -101,7 +165,7 @@ export function ProfileScreen() {
           </View>
 
           <View style={styles.nameForm}>
-            <TextInput
+            <AppTextInput
               value={nameDraft}
               onChangeText={setNameDraft}
               placeholder="Wpisz imię"
@@ -283,9 +347,28 @@ export function ProfileScreen() {
             <ChevronRight size={19} color={COLORS.muted} />
           </Pressable>
 
+          {householdId ? (
+            <Pressable
+              onPress={() => navigate({ name: 'household' })}
+              style={({ pressed }) => [
+                styles.menuRow,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.menuLabel}>
+                <Users size={19} color={COLORS.muted} />
+                <AppText style={styles.infoText}>
+                  Domownicy i zaproszenia
+                </AppText>
+              </View>
+              <ChevronRight size={19} color={COLORS.muted} />
+            </Pressable>
+          ) : null}
+
           <Pressable
             onPress={() => {
-              setConfirmReset(false);
+              setConfirmDeleteAccount(false);
+              setAccountError(null);
               setAccountOpen(true);
             }}
             style={({ pressed }) => [
@@ -309,21 +392,21 @@ export function ProfileScreen() {
         visible={accountOpen}
         transparent
         animationType="slide"
-        onRequestClose={() => {
-          setAccountOpen(false);
-          setConfirmReset(false);
-        }}
+        onRequestClose={closeAccount}
       >
         <View style={styles.modalOverlay}>
           <Pressable
             style={StyleSheet.absoluteFill}
-            onPress={() => {
-              setAccountOpen(false);
-              setConfirmReset(false);
-            }}
+            onPress={closeAccount}
+            disabled={accountAction !== null}
           />
 
-          <View style={styles.modalContent}>
+          <View
+            style={[
+              styles.modalContent,
+              { paddingBottom: Math.max(insets.bottom, 20) },
+            ]}
+          >
             <View style={styles.modalHandle} />
 
             <View style={styles.modalHeader}>
@@ -332,45 +415,119 @@ export function ProfileScreen() {
               </AppText>
 
               <Pressable
-                onPress={() => {
-                  setAccountOpen(false);
-                  setConfirmReset(false);
-                }}
+                onPress={closeAccount}
+                disabled={accountAction !== null}
                 hitSlop={10}
               >
                 <AppText style={styles.closeText}>Zamknij</AppText>
               </Pressable>
             </View>
 
-            <AppText style={styles.modalDescription}>
-              Konta użytkowników pojawią się w kolejnym etapie.
-              Dane prototypu są obecnie powiązane z Twoim kontem
-              i gospodarstwem domowym.
-            </AppText>
-
-            {confirmReset && (
-              <AppText style={styles.warningText}>
-                Czy na pewno chcesz zresetować dane prototypu?
-                Tej operacji nie można cofnąć.
-              </AppText>
-            )}
-
-            <Pressable
-              onPress={handleReset}
-              style={({ pressed }) => [
-                styles.resetButton,
-                confirmReset && styles.resetButtonConfirm,
-                pressed && styles.pressed,
-              ]}
+            <ScrollView
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalBody}
+              showsVerticalScrollIndicator={false}
             >
-              <Trash2 size={19} color={COLORS.danger} />
-
-              <AppText style={styles.resetButtonText}>
-                {confirmReset
-                  ? 'Kliknij ponownie, aby potwierdzić'
-                  : 'Resetuj dane prototypu'}
+              <AppText style={styles.modalDescription}>
+                Zarządzaj dostępem do swojego konta. Usunięcie konta jest
+                trwałe i nie można go cofnąć.
               </AppText>
-            </Pressable>
+
+              {accountError && (
+                <AppText style={styles.accountError}>
+                  {accountError}
+                </AppText>
+              )}
+
+              <View style={styles.accountActions}>
+                <Pressable
+                  onPress={() => void handleSignOut()}
+                  disabled={accountAction !== null}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    disabled: accountAction !== null,
+                  }}
+                  style={({ pressed }) => [
+                    styles.accountButton,
+                    styles.signOutButton,
+                    accountAction !== null && styles.disabledButton,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <LogOut size={18} color={COLORS.green} />
+                  <AppText style={styles.signOutButtonText}>
+                    {accountAction === 'signOut'
+                      ? 'Wylogowywanie...'
+                      : 'Wyloguj się'}
+                  </AppText>
+                </Pressable>
+
+                {confirmDeleteAccount ? (
+                  <>
+                    <AppText style={styles.warningText}>
+                      Usuniemy konto i profil. Gospodarstwo oraz jego dane
+                      pozostaną dla pozostałych członków; jeśli jesteś
+                      ostatnim członkiem, usuniemy również gospodarstwo
+                      i powiązane dane.
+                    </AppText>
+
+                    <Pressable
+                      onPress={() => void handleDeleteAccount()}
+                      disabled={accountAction !== null}
+                      accessibilityRole="button"
+                      accessibilityState={{
+                        disabled: accountAction !== null,
+                      }}
+                      style={({ pressed }) => [
+                        styles.accountButton,
+                        styles.deleteButtonConfirm,
+                        accountAction !== null && styles.disabledButton,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Trash2 size={18} color={COLORS.white} />
+                      <AppText style={styles.deleteButtonConfirmText}>
+                        {accountAction === 'deleteAccount'
+                          ? 'Usuwanie konta...'
+                          : 'Usuń konto trwale'}
+                      </AppText>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => setConfirmDeleteAccount(false)}
+                      disabled={accountAction !== null}
+                      style={({ pressed }) => [
+                        styles.cancelDeleteButton,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <AppText style={styles.cancelDeleteButtonText}>
+                        Anuluj
+                      </AppText>
+                    </Pressable>
+                  </>
+                ) : (
+                  <Pressable
+                    onPress={() => {
+                      setConfirmDeleteAccount(true);
+                      setAccountError(null);
+                    }}
+                    disabled={accountAction !== null}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.accountButton,
+                      styles.deleteButton,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Trash2 size={18} color={COLORS.danger} />
+                    <AppText style={styles.deleteButtonText}>
+                      Usuń konto
+                    </AppText>
+                  </Pressable>
+                )}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -560,13 +717,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   modalContent: {
+    maxHeight: '90%',
     backgroundColor: COLORS.cream,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 22,
     paddingTop: 12,
-    paddingBottom: 36,
+    gap: 16,
+  },
+  modalScroll: {
+    flexShrink: 1,
+  },
+  modalBody: {
     gap: 18,
+    paddingBottom: 8,
   },
   modalHandle: {
     alignSelf: 'center',
@@ -603,22 +767,59 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontFamily: 'SenBold',
   },
-  resetButton: {
+  accountError: {
+    color: COLORS.danger,
+    fontSize: 13,
+    lineHeight: 20,
+    fontFamily: 'SenBold',
+  },
+  accountActions: {
+    gap: 10,
+  },
+  accountButton: {
     minHeight: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 9,
     borderRadius: 16,
-    backgroundColor: COLORS.dangerLight,
     paddingHorizontal: 12,
   },
-  resetButtonConfirm: {
-    backgroundColor: '#f5d2ce',
+  signOutButton: {
+    backgroundColor: COLORS.lightGreen,
   },
-  resetButtonText: {
-    color: COLORS.danger,
-    fontSize: 13,
+  signOutButtonText: {
+    color: COLORS.green,
+    fontSize: 14,
     fontFamily: 'SenBold',
+  },
+  deleteButton: {
+    backgroundColor: COLORS.dangerLight,
+  },
+  deleteButtonText: {
+    color: COLORS.danger,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  deleteButtonConfirm: {
+    backgroundColor: COLORS.danger,
+  },
+  deleteButtonConfirmText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  cancelDeleteButton: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelDeleteButtonText: {
+    color: COLORS.muted,
+    fontSize: 14,
+    fontFamily: 'SenBold',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

@@ -2,10 +2,15 @@ import { useState, type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { AppTextInput } from '@/components/ui/AppTextInput';
+import { useHousehold } from '@/auth/HouseholdContext';
+import {
+  getHouseholdMemberLabel,
+  useHouseholdMembers,
+} from '@/hooks/useHouseholdMembers';
 
 import type {
   CleaningTask,
@@ -124,6 +129,15 @@ export function TaskSettingsSheet({
 }) {
   const { updateTask, skipTask, postponeTask, deleteTask } = useAppStore();
   const { showToast } = useToast();
+  const { householdId } = useHousehold();
+  const {
+    members,
+    ownerId,
+    isOwner,
+    currentUserId,
+    loading: membersLoading,
+    error: membersError,
+  } = useHouseholdMembers();
 
   const [title, setTitle] = useState(task.title);
   const [roomId, setRoomId] = useState<RoomId>(task.roomId);
@@ -133,6 +147,7 @@ export function TaskSettingsSheet({
     getInitialCustomRule(task),
   );
   const [dueDate, setDueDate] = useState(task.dueDate);
+  const [assignedTo, setAssignedTo] = useState(task.assignedTo ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const updateCustomInterval = (value: number) => {
@@ -283,6 +298,9 @@ export function TaskSettingsSheet({
       customRule: nextCustomRule,
       scheduleNote: frequencyChanged ? null : task.scheduleNote,
       ...(dueDate && dueDate !== task.dueDate ? { dueDate } : {}),
+      ...(householdId && isOwner
+        ? { assignedTo: assignedTo || null }
+        : {}),
     });
 
     return true;
@@ -352,7 +370,7 @@ export function TaskSettingsSheet({
         </AppText>
 
         <Field label="Nazwa">
-          <TextInput
+          <AppTextInput
             value={title}
             onChangeText={setTitle}
             maxLength={80}
@@ -377,7 +395,7 @@ export function TaskSettingsSheet({
         </Field>
 
         <Field label="Szacowany czas (minuty)">
-          <TextInput
+          <AppTextInput
             value={minutes}
             onChangeText={setMinutes}
             keyboardType="number-pad"
@@ -388,8 +406,54 @@ export function TaskSettingsSheet({
           />
         </Field>
 
+        {householdId ? (
+          <Field label="Przypisane do">
+            {membersLoading ? (
+              <AppText style={styles.helperText}>
+                Ładowanie domowników...
+              </AppText>
+            ) : isOwner ? (
+              <View style={styles.choiceWrap}>
+                <ChoiceButton
+                  label="Nieprzypisane"
+                  selected={!assignedTo}
+                  onPress={() => setAssignedTo('')}
+                  compact
+                />
+                {members.map((member) => (
+                  <ChoiceButton
+                    key={member.userId}
+                    label={
+                      member.userId === currentUserId
+                        ? `${member.displayName} (Ty)`
+                        : member.displayName
+                    }
+                    selected={assignedTo === member.userId}
+                    onPress={() => setAssignedTo(member.userId)}
+                    compact
+                  />
+                ))}
+              </View>
+            ) : (
+              <>
+                <AppText style={styles.assignmentValue}>
+                  {getHouseholdMemberLabel(members, task.assignedTo) ??
+                    'Nieprzypisane'}
+                </AppText>
+                <AppText style={styles.helperText}>
+                  {membersError
+                    ? 'Nie udało się wczytać domowników.'
+                    : ownerId
+                      ? 'Przypisania zmienia właściciel gospodarstwa.'
+                      : 'Wybierzcie właściciela w sekcji Domownicy.'}
+                </AppText>
+              </>
+            )}
+          </Field>
+        ) : null}
+
         <Field label="Termin (RRRR-MM-DD)">
-          <TextInput
+          <AppTextInput
             value={dueDate}
             onChangeText={setDueDate}
             keyboardType="numbers-and-punctuation"
@@ -462,7 +526,7 @@ export function TaskSettingsSheet({
 
               <Field label="Powtarzaj co">
                 <View style={styles.intervalRow}>
-                  <TextInput
+                  <AppTextInput
                     value={String(customRuleDraft.interval)}
                     onChangeText={(value) =>
                       updateCustomInterval(value === '' ? 0 : Number(value))
@@ -566,7 +630,7 @@ export function TaskSettingsSheet({
                   {customRuleDraft.monthlyPattern.type === 'dayOfMonth' ? (
                     <View style={styles.inlineField}>
                       <AppText style={styles.inlineLabel}>Dnia</AppText>
-                      <TextInput
+                      <AppTextInput
                         value={String(customRuleDraft.monthlyPattern.day)}
                         onChangeText={(value) => {
                           const day = value === '' ? 0 : Number(value);
@@ -753,6 +817,11 @@ const styles = StyleSheet.create({
   fieldLabel: {
     color: COLORS.textDark,
     fontSize: 14,
+  },
+  assignmentValue: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontFamily: 'SenBold',
   },
   input: {
     width: '100%',

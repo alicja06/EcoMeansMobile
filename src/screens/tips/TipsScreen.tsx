@@ -3,11 +3,11 @@ import { useState } from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { Bookmark, ChevronRight } from 'lucide-react-native';
 
+import { AppText } from '@/components/ui/AppText';
 import { TIPS, TIP_CATEGORIES } from '@/data/tips';
 import { TIP_CATEGORY_ICONS } from '@/components/icons/categoryIcons';
 import { useAppStore } from '@/store/AppStoreContext';
@@ -15,6 +15,7 @@ import { useNavigation } from '@/store/NavigationContext';
 import { useToast } from '@/store/ToastContext';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import type { TipCategoryId } from '@/types';
+import { fontFamilies } from '@/theme/typography';
 
 export function TipsScreen() {
   const { state, toggleSavedTip } = useAppStore();
@@ -57,13 +58,13 @@ export function TipsScreen() {
               </View>
 
               <View style={styles.categoryText}>
-                <Text style={styles.categoryName}>
+                <AppText style={styles.categoryName}>
                   {item.name}
-                </Text>
+                </AppText>
 
-                <Text style={styles.categoryDescription}>
+                <AppText style={styles.categoryDescription}>
                   {item.description}
-                </Text>
+                </AppText>
               </View>
             </Pressable>
           );
@@ -91,20 +92,20 @@ export function TipsScreen() {
                 ]}
               >
                 <View style={styles.tipContent}>
-                  <Text style={styles.tipMeta}>
+                  <AppText style={styles.tipMeta}>
                     {categoryName} · {tip.readMinutes} min
-                  </Text>
+                  </AppText>
 
-                  <Text style={styles.tipTitle}>
+                  <AppText style={styles.tipTitle}>
                     {tip.title}
-                  </Text>
+                  </AppText>
 
-                  <Text
+                  <AppText
                     style={styles.tipSummary}
                     numberOfLines={2}
                   >
                     {tip.summary}
-                  </Text>
+                  </AppText>
                 </View>
 
                 <ChevronRight
@@ -143,9 +144,9 @@ export function TipsScreen() {
         })}
 
         {tips.length === 0 && (
-          <Text style={styles.emptyText}>
+          <AppText style={styles.emptyText}>
             Brak porad w tej kategorii.
-          </Text>
+          </AppText>
         )}
       </View>
     </View>
@@ -202,12 +203,13 @@ const styles = StyleSheet.create({
   categoryName: {
     color: '#4e4d4d',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   categoryDescription: {
     color: '#77766f',
     fontSize: 12,
     lineHeight: 17,
+    fontFamily: fontFamilies.regular,
   },
   tipsList: {
     paddingHorizontal: 20,
@@ -243,13 +245,13 @@ const styles = StyleSheet.create({
   tipMeta: {
     color: '#3b742f',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fontFamilies.medium,
   },
   tipTitle: {
     marginTop: 4,
     color: '#4e4d4d',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
     lineHeight: 21,
   },
   tipSummary: {
@@ -257,6 +259,7 @@ const styles = StyleSheet.create({
     color: '#77766f',
     fontSize: 13,
     lineHeight: 19,
+    fontFamily: fontFamilies.regular,
   },
   bookmarkButton: {
     width: 48,
@@ -281,6 +284,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     color: '#77766f',
     fontSize: 14,
+    fontFamily: fontFamilies.regular,
     textAlign: 'center',
   },
 });

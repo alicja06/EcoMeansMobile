@@ -21,6 +21,7 @@ import { DemoNotice } from '@/components/ui/controls';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { Sheet } from '@/components/ui/Sheet';
 import { fontFamilies } from '@/theme/typography';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SectionProps {
   title: string;
@@ -49,6 +50,7 @@ export function ProductDetailScreen({
 
   const { goBack, navigate } = useNavigation();
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
 
   const [storeInfo, setStoreInfo] = useState(false);
 
@@ -182,7 +184,12 @@ export function ProductDetailScreen({
         </Section>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom, 16) },
+        ]}
+      >
         <Pressable
           onPress={() => {
             if (inList) {

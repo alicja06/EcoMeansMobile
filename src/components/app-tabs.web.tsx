@@ -50,7 +50,7 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
         <AppText
           style={[
             styles.tabButtonText,
-            { color: isFocused ? Colors.light.text : Colors.light.tabIconDefault },
+            { color: isFocused ? Colors.light.text : Colors.light.textSecondary },
           ]}
         >
           {children}
@@ -73,7 +73,7 @@ export function CustomTabList(props: TabListProps) {
 
         <ExternalLink href="https://docs.expo.dev" asChild>
           <Pressable style={styles.externalPressable}>
-            <AppText style={[styles.linkText, { color: colors.tint }]}>
+            <AppText style={[styles.linkText, { color: colors.textSecondary }]}>
               Docs
             </AppText>
             <SymbolView

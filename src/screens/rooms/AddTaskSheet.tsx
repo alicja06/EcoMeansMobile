@@ -4,7 +4,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 
@@ -16,6 +15,7 @@ import { useAppStore } from '@/store/AppStoreContext';
 import { useToast } from '@/store/ToastContext';
 import { Sheet } from '@/components/ui/Sheet';
 import { AppText } from '@/components/ui/AppText';
+import { AppTextInput } from '@/components/ui/AppTextInput';
 
 interface AddTaskSheetProps {
   roomId: RoomId;
@@ -132,7 +132,7 @@ export function AddTaskSheet({ roomId, onClose }: AddTaskSheetProps) {
             Nazwa zadania
           </AppText>
 
-          <TextInput
+          <AppTextInput
             value={title}
             onChangeText={updateTitle}
             maxLength={80}
@@ -174,7 +174,7 @@ export function AddTaskSheet({ roomId, onClose }: AddTaskSheetProps) {
             Szacowany czas (minuty)
           </AppText>
 
-          <TextInput
+          <AppTextInput
             value={minutes}
             onChangeText={updateMinutes}
             keyboardType="number-pad"
@@ -232,7 +232,7 @@ export function AddTaskSheet({ roomId, onClose }: AddTaskSheetProps) {
                 Co
               </AppText>
 
-              <TextInput
+              <AppTextInput
                 value={customInput}
                 onChangeText={(value) => {
                   setCustomInput(value);

@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   Pressable,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 
@@ -13,10 +12,13 @@ import {
 } from '@/data/calculators';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppText } from '@/components/ui/AppText';
+import { AppTextInput } from '@/components/ui/AppTextInput';
 import { DemoNotice } from '@/components/ui/controls';
+import { useNavigation } from '@/store/NavigationContext';
 import { fontFamilies } from '@/theme/typography';
 
 export function CalculatorsScreen() {
+  const { goBack } = useNavigation();
   const [dosageId, setDosageId] = useState<string>(
     FLOOR_DOSAGE_OPTIONS[1].id,
   );
@@ -39,6 +41,7 @@ export function CalculatorsScreen() {
       <ScreenHeader
         title="Kalkulator"
         subtitle="Dawkowanie EcoMeans Podłoga"
+        onBack={goBack}
       />
 
       <View style={styles.content}>
@@ -79,7 +82,7 @@ export function CalculatorsScreen() {
 
         <AppText style={styles.inputLabel}>Ile litrów wody?</AppText>
 
-        <TextInput
+        <AppTextInput
           value={waterInput}
           onChangeText={setWaterInput}
           keyboardType="decimal-pad"

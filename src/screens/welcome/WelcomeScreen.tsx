@@ -1,5 +1,4 @@
-
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   Animated,
   Easing,
@@ -7,29 +6,139 @@ import {
   Image,
   SafeAreaView,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
+
+import { AppText } from "@/components/ui/AppText";
+import { fontFamilies } from "@/theme/typography";
 
 interface WelcomeScreenProps {
   onStart: () => void;
 }
 
 const LEAVES = [
-  { viewBox: "82 0 24 9", left: 2, top: 4, endLeft: 19, endTop: 7, width: 46, animation: "a", delay: 0 },
-  { viewBox: "28 26 32 17", left: 88, top: 14, endLeft: 73, endTop: 10, width: 38, animation: "b", delay: 300 },
-  { viewBox: "64 11 17 22", left: 5, top: 29, endLeft: 3, endTop: 24, width: 55, animation: "c", delay: 600 },
-  { viewBox: "0 9 35 15", left: 94, top: 43, endLeft: 84, endTop: 34, width: 40, animation: "d", delay: 900 },
-  { viewBox: "82 0 24 9", left: 8, top: 59, endLeft: 2, endTop: 65, width: 48, animation: "b", delay: 1200 },
-  { viewBox: "64 11 17 22", left: 91, top: 76, endLeft: 80, endTop: 83, width: 36, animation: "a", delay: 1500 },
-  { viewBox: "28 26 32 17", left: 76, top: 5, endLeft: 96, endTop: 19, width: 40, animation: "d", delay: 200 },
-  { viewBox: "0 9 35 15", left: 55, top: 20, endLeft: 3, endTop: 42, width: 54, animation: "c", delay: 500 },
-  { viewBox: "82 0 24 9", left: 18, top: 36, endLeft: 82, endTop: 48, width: 36, animation: "a", delay: 800 },
-  { viewBox: "64 11 17 22", left: 66, top: 51, endLeft: 97, endTop: 58, width: 48, animation: "b", delay: 1100 },
-  { viewBox: "28 26 32 17", left: 42, top: 67, endLeft: 53, endTop: 91, width: 42, animation: "c", delay: 1400 },
-  { viewBox: "0 9 35 15", left: 83, top: 82, endLeft: 13, endTop: 96, width: 56, animation: "d", delay: 1700 },
+  {
+    viewBox: "82 0 24 9",
+    left: 2,
+    top: 4,
+    endLeft: 19,
+    endTop: 7,
+    width: 46,
+    animation: "a",
+    delay: 0,
+  },
+  {
+    viewBox: "28 26 32 17",
+    left: 88,
+    top: 14,
+    endLeft: 73,
+    endTop: 10,
+    width: 38,
+    animation: "b",
+    delay: 300,
+  },
+  {
+    viewBox: "64 11 17 22",
+    left: 5,
+    top: 29,
+    endLeft: 3,
+    endTop: 24,
+    width: 55,
+    animation: "c",
+    delay: 600,
+  },
+  {
+    viewBox: "0 9 35 15",
+    left: 94,
+    top: 43,
+    endLeft: 84,
+    endTop: 34,
+    width: 40,
+    animation: "d",
+    delay: 900,
+  },
+  {
+    viewBox: "82 0 24 9",
+    left: 8,
+    top: 59,
+    endLeft: 2,
+    endTop: 65,
+    width: 48,
+    animation: "b",
+    delay: 1200,
+  },
+  {
+    viewBox: "64 11 17 22",
+    left: 91,
+    top: 76,
+    endLeft: 80,
+    endTop: 83,
+    width: 36,
+    animation: "a",
+    delay: 1500,
+  },
+  {
+    viewBox: "28 26 32 17",
+    left: 76,
+    top: 5,
+    endLeft: 96,
+    endTop: 19,
+    width: 40,
+    animation: "d",
+    delay: 200,
+  },
+  {
+    viewBox: "0 9 35 15",
+    left: 55,
+    top: 20,
+    endLeft: 3,
+    endTop: 42,
+    width: 54,
+    animation: "c",
+    delay: 500,
+  },
+  {
+    viewBox: "82 0 24 9",
+    left: 18,
+    top: 36,
+    endLeft: 82,
+    endTop: 48,
+    width: 36,
+    animation: "a",
+    delay: 800,
+  },
+  {
+    viewBox: "64 11 17 22",
+    left: 66,
+    top: 51,
+    endLeft: 97,
+    endTop: 58,
+    width: 48,
+    animation: "b",
+    delay: 1100,
+  },
+  {
+    viewBox: "28 26 32 17",
+    left: 42,
+    top: 67,
+    endLeft: 53,
+    endTop: 91,
+    width: 42,
+    animation: "c",
+    delay: 1400,
+  },
+  {
+    viewBox: "0 9 35 15",
+    left: 83,
+    top: 82,
+    endLeft: 13,
+    endTop: 96,
+    width: 56,
+    animation: "d",
+    delay: 1700,
+  },
 ] as const;
 
 const ROTATIONS = {
@@ -46,7 +155,7 @@ function LeafIllustration({
   viewBox: string;
   width: number;
 }) {
-  const [x, y, viewWidth, viewHeight] = viewBox.split(" ").map(Number);
+  const [, , viewWidth, viewHeight] = viewBox.split(" ").map(Number);
 
   return (
     <Svg
@@ -112,9 +221,9 @@ function LeafIllustration({
 export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const { width, height } = useWindowDimensions();
 
-  const animations = useRef(
-    LEAVES.map(() => new Animated.Value(0)),
-  ).current;
+  const [animations] = useState(
+    () => LEAVES.map(() => new Animated.Value(0)),
+  );
 
   useEffect(() => {
     const runningAnimations = animations.map((value, index) =>
@@ -141,10 +250,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           {LEAVES.map((leaf, index) => {
             const translateX = animations[index].interpolate({
               inputRange: [0, 1],
-              outputRange: [
-                0,
-                (width * (leaf.endLeft - leaf.left)) / 100,
-              ],
+              outputRange: [0, (width * (leaf.endLeft - leaf.left)) / 100],
             });
 
             const translateY = animations[index].interpolate({
@@ -174,18 +280,11 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
                     left: `${leaf.left}%`,
                     top: `${leaf.top}%`,
                     opacity,
-                    transform: [
-                      { translateX },
-                      { translateY },
-                      { rotate },
-                    ],
+                    transform: [{ translateX }, { translateY }, { rotate }],
                   },
                 ]}
               >
-                <LeafIllustration
-                  viewBox={leaf.viewBox}
-                  width={leaf.width}
-                />
+                <LeafIllustration viewBox={leaf.viewBox} width={leaf.width} />
               </Animated.View>
             );
           })}
@@ -199,16 +298,16 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             accessibilityLabel="EcoMeans"
           />
 
-          <Text style={styles.heading}>
+          <AppText style={styles.heading}>
             Czysty dom.
             {"\n"}
             Spokojna głowa.
-          </Text>
+          </AppText>
 
-          <Text style={styles.description}>
+          <AppText style={styles.description}>
             Zadbaj o dom w swoim rytmie. Zaplanuj porządki, podziel obowiązki i
             miej wszystko pod kontrolą.
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.footer}>
@@ -219,12 +318,12 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.buttonText}>Zaczynamy!</Text>
+            <AppText style={styles.buttonText}>Zaczynamy!</AppText>
           </Pressable>
 
-          <Text style={styles.tagline}>
+          <AppText style={styles.tagline}>
             Twój dom, Twoje tempo, Twój porządek.
-          </Text>
+          </AppText>
         </View>
       </View>
     </SafeAreaView>
@@ -266,7 +365,7 @@ const styles = StyleSheet.create({
     lineHeight: 56,
     textAlign: "center",
     marginBottom: 20,
-    fontFamily: "CaveatBrush",
+    fontFamily: fontFamilies.decorative,
   },
   description: {
     maxWidth: 340,
@@ -274,7 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 25,
     textAlign: "center",
-    fontFamily: "Sen",
+    fontFamily: fontFamilies.regular,
   },
   footer: {
     width: "100%",
@@ -299,7 +398,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#ffffff",
     fontSize: 18,
-    fontFamily: "SenBold",
+    fontFamily: fontFamilies.bold,
   },
   tagline: {
     marginTop: 20,
@@ -307,6 +406,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     fontSize: 14,
     textAlign: "center",
-    fontFamily: "Sen",
+    fontFamily: fontFamilies.regular,
   },
 });

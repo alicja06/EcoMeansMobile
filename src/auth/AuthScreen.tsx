@@ -6,10 +6,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from "react-native";
 import { AppText } from "@/components/ui/AppText";
+import { AppTextInput } from "@/components/ui/AppTextInput";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
@@ -289,7 +289,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
                 <AppText style={styles.label}>
                   Adres e-mail
                 </AppText>
-                <TextInput
+                <AppTextInput
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -307,7 +307,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
               {!forgotPassword ? (
                 <View style={styles.field}>
                   <AppText style={styles.label}>Hasło</AppText>
-                  <TextInput
+                  <AppTextInput
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry

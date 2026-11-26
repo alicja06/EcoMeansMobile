@@ -12,7 +12,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signOut: () => Promise<void>;
+  signOut: (scope?: 'global' | 'local') => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,8 +54,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, []);
 
-  async function signOut() {
-    const { error } = await supabase.auth.signOut();
+  async function signOut(scope: 'global' | 'local' = 'global') {
+    const { error } = await supabase.auth.signOut({ scope });
 
     if (error) {
       throw error;

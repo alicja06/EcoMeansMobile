@@ -7,10 +7,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from "react-native";
 import { AppText } from "@/components/ui/AppText";
+import { AppTextInput } from "@/components/ui/AppTextInput";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type {
@@ -691,7 +691,7 @@ export function OnboardingScreen() {
   const renderTaskCard = (task: CleaningTask) => (
     <View key={task.id} style={styles.taskCard}>
       <View style={styles.taskTitleRow}>
-        <TextInput
+        <AppTextInput
           value={task.title}
           onChangeText={(value) => updateTask(task.id, { title: value })}
           accessibilityLabel="Nazwa czynności"
@@ -819,7 +819,7 @@ export function OnboardingScreen() {
 
           {renderSectionTitle("Czy mieszkają z Tobą zwierzęta?")}
 
-          <TextInput
+          <AppTextInput
             value={draft.pets}
             onChangeText={(value) => patch({ pets: value })}
             placeholder="Np. pies, kot. Zostaw puste, jeśli nie."
@@ -829,7 +829,7 @@ export function OnboardingScreen() {
 
           {renderSectionTitle("Szczególne potrzeby dotyczące czystości")}
 
-          <TextInput
+          <AppTextInput
             value={draft.specialNeeds}
             onChangeText={(value) => patch({ specialNeeds: value })}
             placeholder="Opcjonalnie. Np. alergia, ktoś pracuje w domu, dużo gotowania."
@@ -865,7 +865,7 @@ export function OnboardingScreen() {
           </View>
 
           <View style={styles.addRow}>
-            <TextInput
+            <AppTextInput
               value={customRoomName}
               onChangeText={setCustomRoomName}
               placeholder="Nazwa pomieszczenia"
@@ -911,7 +911,7 @@ export function OnboardingScreen() {
           </View>
 
           <View style={styles.addRow}>
-            <TextInput
+            <AppTextInput
               value={customApplianceName}
               onChangeText={setCustomApplianceName}
               placeholder="Nazwa urządzenia"
@@ -1236,7 +1236,7 @@ export function OnboardingScreen() {
 
           <FieldLabel>Powtarzaj co</FieldLabel>
 
-          <TextInput
+          <AppTextInput
             value={String(customRuleDraft.interval)}
             onChangeText={(value) => {
               const interval = Math.max(1, Math.min(365, Number(value) || 1));
@@ -1568,7 +1568,7 @@ export function OnboardingScreen() {
           </AppText>
 
           <FieldLabel>Nazwa czynności</FieldLabel>
-          <TextInput
+          <AppTextInput
             value={customTitle}
             onChangeText={setCustomTitle}
             placeholder="Np. czyszczenie drzwi"

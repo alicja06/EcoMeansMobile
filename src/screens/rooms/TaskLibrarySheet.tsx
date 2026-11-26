@@ -1,11 +1,12 @@
-﻿import {
+﻿
+import {
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { Check } from 'lucide-react-native';
 
+import { AppText } from '@/components/ui/AppText';
 import { findRoom } from '@/data/rooms';
 import { TASK_LIBRARY } from '@/data/taskLibrary';
 import { useAppStore } from '@/store/AppStoreContext';
@@ -14,6 +15,7 @@ import { todayISO } from '@/lib/dates';
 import { frequencyLabel } from '@/lib/tasks';
 import { Sheet } from '@/components/ui/Sheet';
 import { DemoNotice } from '@/components/ui/controls';
+import { fontFamilies } from '@/theme/typography';
 
 export function TaskLibrarySheet({
   onClose,
@@ -68,9 +70,9 @@ export function TaskLibrarySheet({
 
         {groups.map((group) => (
           <View key={group.id} style={styles.group}>
-            <Text style={styles.groupTitle}>
+            <AppText style={styles.groupTitle}>
               {group.name}
-            </Text>
+            </AppText>
 
             <View style={styles.taskList}>
               {group.tasks.map((item) => {
@@ -86,11 +88,11 @@ export function TaskLibrarySheet({
                     style={styles.taskCard}
                   >
                     <View style={styles.taskInfo}>
-                      <Text style={styles.taskTitle}>
+                      <AppText style={styles.taskTitle}>
                         {item.title}
-                      </Text>
+                      </AppText>
 
-                      <Text style={styles.taskDetails}>
+                      <AppText style={styles.taskDetails}>
                         {frequencyLabel(
                           item.frequency,
                           item.customDays,
@@ -99,7 +101,7 @@ export function TaskLibrarySheet({
                         {' · '}ok. {item.minutes} min
                         {' · '}
                         {findRoom(item.roomId)?.name}
-                      </Text>
+                      </AppText>
                     </View>
 
                     <Pressable
@@ -136,7 +138,7 @@ export function TaskLibrarySheet({
                         />
                       ) : null}
 
-                      <Text
+                      <AppText
                         style={[
                           styles.addButtonText,
                           added
@@ -145,7 +147,7 @@ export function TaskLibrarySheet({
                         ]}
                       >
                         {added ? 'Dodane' : 'Dodaj'}
-                      </Text>
+                      </AppText>
                     </Pressable>
                   </View>
                 );
@@ -169,7 +171,7 @@ const styles = StyleSheet.create({
   groupTitle: {
     color: '#4e4d4d',
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   taskList: {
     gap: 8,
@@ -191,12 +193,13 @@ const styles = StyleSheet.create({
   taskTitle: {
     color: '#4e4d4d',
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fontFamilies.medium,
   },
   taskDetails: {
     color: '#77766f',
     fontSize: 12,
     lineHeight: 17,
+    fontFamily: fontFamilies.regular,
   },
   addButton: {
     flexDirection: 'row',
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fontFamilies.medium,
   },
   addButtonTextActive: {
     color: '#ffffff',

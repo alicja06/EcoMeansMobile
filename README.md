@@ -48,6 +48,47 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## Supabase account management
+
+The account management screen calls the `delete-account` Edge Function.
+Before enabling account deletion for users, ensure the app's existing
+`households`, `household_members`, `tasks`, `task_history`, `shopping_items`,
+and `profiles` tables are present, then apply the migration and deploy the
+function to the same Supabase project:
+
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push
+supabase functions deploy delete-account
+```
+
+The function validates the caller's session, removes the user's profile and
+household membership, preserves a household shared with other members, and
+deletes household data only when the user was its last member. It then deletes
+the Auth user using a server-side Supabase key. No server key is stored in the
+mobile app.
+
+The household collaboration migration adds one-time invitation codes that
+expire after 7 days and an owner role. The creator owns new households;
+existing households with one member assign that member as owner, while
+existing multi-member households require a one-time owner selection in the
+Domownicy screen. Only the owner can change task assignments, although every
+member can view and complete tasks. If the owner leaves, ownership is
+transferred to a remaining member.
+
+Deploy the email invitation function after applying the household migration:
+
+```bash
+supabase functions deploy send-household-invite
+```
+
+Email invitations use Supabase Auth's invite email, so configure custom SMTP in
+the project's Authentication settings and allow `ecomeansmobile://auth/callback`
+as a redirect URL. The invite link joins the recipient to the household after
+they confirm the invitation. This email flow is for new EcoMeans accounts; for
+someone who already has an account, create and share a one-time invitation code.
+
 ## Join the community
 
 Join our community of developers creating universal apps.

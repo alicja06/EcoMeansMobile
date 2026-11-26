@@ -3,11 +3,11 @@ import { useState } from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { ListPlus, Plus } from 'lucide-react-native';
 
+import { AppText } from '@/components/ui/AppText';
 import { ROOMS } from '@/data/rooms';
 import { ROOM_ICONS } from '@/components/icons/categoryIcons';
 import { useAppStore } from '@/store/AppStoreContext';
@@ -18,6 +18,7 @@ import { isDoneToday, taskCountLabel } from '@/lib/tasks';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { EmptyState } from '@/components/ui/controls';
 import { TaskLibrarySheet } from '@/screens/rooms/TaskLibrarySheet';
+import { fontFamilies } from '@/theme/typography';
 
 export function RoomsScreen() {
   const { state, updateHome } = useAppStore();
@@ -97,19 +98,19 @@ export function RoomsScreen() {
               </View>
 
               <View style={styles.roomInfo}>
-                <Text style={styles.roomName}>
+                <AppText style={styles.roomName}>
                   {room.name}
-                </Text>
+                </AppText>
 
-                <Text style={styles.roomTaskCount}>
+                <AppText style={styles.roomTaskCount}>
                   {taskCountLabel(tasks.length)}
                   {dueCount > 0 ? (
-                    <Text style={styles.dueCount}>
+                    <AppText style={styles.dueCount}>
                       {' · '}
                       {dueCount} na dziś
-                    </Text>
+                    </AppText>
                   ) : null}
-                </Text>
+                </AppText>
               </View>
             </Pressable>
           );
@@ -133,9 +134,9 @@ export function RoomsScreen() {
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.rebuildButtonText}>
+          <AppText style={styles.rebuildButtonText}>
             Zmień opis domu i ułóż plan od nowa
-          </Text>
+          </AppText>
         </Pressable>
       </View>
 
@@ -208,15 +209,16 @@ const styles = StyleSheet.create({
   roomName: {
     color: '#4e4d4d',
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   roomTaskCount: {
     color: '#77766f',
     fontSize: 12,
+    fontFamily: fontFamilies.regular,
   },
   dueCount: {
     color: '#3b742f',
-    fontWeight: '700',
+    fontFamily: fontFamilies.bold,
   },
   bottomSection: {
     paddingHorizontal: 20,
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
   rebuildButtonText: {
     color: '#3b742f',
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: fontFamilies.medium,
     textAlign: 'center',
   },
 });

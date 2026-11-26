@@ -88,7 +88,15 @@ export function HouseholdProvider({ children }: HouseholdProviderProps) {
   useEffect(() => {
     if (authLoading) return;
 
-    void refreshHousehold();
+    let active = true;
+
+    void Promise.resolve().then(() => {
+      if (active) return refreshHousehold();
+    });
+
+    return () => {
+      active = false;
+    };
   }, [authLoading, refreshHousehold]);
 
   const setCurrentHousehold = (id: string) => {

@@ -1,12 +1,13 @@
-
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
+import { BackHandler, Platform } from 'react-native';
 
 import type { Route } from '@/types';
 
@@ -38,6 +39,24 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const canGoBack = stack.length > 1;
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (!canGoBack) return false;
+
+        goBack();
+        return true;
+      },
+    );
+
+    return () => subscription.remove();
+  }, [canGoBack, goBack]);
+
   const resetTo = useCallback((route: Route) => setStack([route]), []);
 
   const startPlanEditing = useCallback(() => setIsEditingPlan(true), []);
@@ -46,7 +65,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const value = useMemo<NavigationContextValue>(
     () => ({
       route: stack[stack.length - 1],
-      canGoBack: stack.length > 1,
+      canGoBack,
       isEditingPlan,
       navigate,
       goBack,
@@ -56,6 +75,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     }),
     [
       stack,
+      canGoBack,
       isEditingPlan,
       navigate,
       goBack,

@@ -16,6 +16,10 @@ import {
 } from '@/lib/schedule';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { AppText } from '@/components/ui/AppText';
+import {
+  getHouseholdMemberLabel,
+  useHouseholdMembers,
+} from '@/hooks/useHouseholdMembers';
 
 interface WeekBoardProps {
   tasks: CleaningTask[];
@@ -42,6 +46,7 @@ export function WeekBoard({
   onToggle,
   onOpen,
 }: WeekBoardProps) {
+  const { members } = useHouseholdMembers();
   const calendar = resolveCalendar(home);
 
   return (
@@ -106,6 +111,10 @@ export function WeekBoard({
                     <TaskRow
                       key={task.id}
                       task={task}
+                      assignedToLabel={getHouseholdMemberLabel(
+                        members,
+                        task.assignedTo,
+                      )}
                       today={today}
                       done={done}
                       whenLabel={

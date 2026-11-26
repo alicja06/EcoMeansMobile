@@ -10,8 +10,11 @@ import {
   type ReactNode,
 } from 'react';
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { CircleCheck } from 'lucide-react-native';
+
+import { AppText } from '@/components/ui/AppText';
+import { fontFamilies } from '@/theme/typography';
 
 interface ToastContextValue {
   showToast: (message: string) => void;
@@ -64,7 +67,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         <View pointerEvents="none" style={styles.container}>
           <View style={styles.toast}>
             <CircleCheck size={20} color="#73a62d" />
-            <Text style={styles.message}>{toast.message}</Text>
+            <AppText style={styles.message}>{toast.message}</AppText>
           </View>
         </View>
       )}
@@ -106,6 +109,6 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#ffffff',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fontFamilies.medium,
   },
 });

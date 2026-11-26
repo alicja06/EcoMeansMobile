@@ -4,7 +4,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import {
@@ -22,6 +21,7 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { EmptyState } from '@/components/ui/controls';
 import { Sheet } from '@/components/ui/Sheet';
 import { AppText } from '@/components/ui/AppText';
+import { AppTextInput } from '@/components/ui/AppTextInput';
 
 export function ShoppingListScreen() {
   const {
@@ -140,7 +140,7 @@ export function ShoppingListScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.addRow}>
-          <TextInput
+          <AppTextInput
             value={name}
             onChangeText={setName}
             onSubmitEditing={submit}

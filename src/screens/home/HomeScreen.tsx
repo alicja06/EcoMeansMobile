@@ -25,6 +25,10 @@ import { isScheduledOn, resolveCalendar } from '@/lib/schedule';
 import { TaskRow } from '@/components/tasks/TaskRow';
 import { TaskSettingsSheet } from '@/components/tasks/TaskSettingsSheet';
 import { AppText } from '@/components/ui/AppText';
+import {
+  getHouseholdMemberLabel,
+  useHouseholdMembers,
+} from '@/hooks/useHouseholdMembers';
 import { ProductImage } from '@/components/ui/ProductImage';
 import { fontFamilies } from '@/theme/typography';
 import { PRODUCTS } from '@/data/products';
@@ -45,6 +49,7 @@ export function HomeScreen() {
   const { state, toggleTaskDone } = useAppStore();
   const { navigate } = useNavigation();
   const { showToast } = useToast();
+  const { members } = useHouseholdMembers();
 
   const [selected, setSelected] = useState<CleaningTask | null>(null);
 
@@ -179,6 +184,10 @@ export function HomeScreen() {
                   <TaskRow
                     key={task.id}
                     task={task}
+                    assignedToLabel={getHouseholdMemberLabel(
+                      members,
+                      task.assignedTo,
+                    )}
                     today={today}
                     done={done}
                     whenLabel={done ? 'Zrobione' : 'Na dziś'}
@@ -223,6 +232,10 @@ export function HomeScreen() {
                 <TaskRow
                   key={task.id}
                   task={task}
+                  assignedToLabel={getHouseholdMemberLabel(
+                    members,
+                    task.assignedTo,
+                  )}
                   today={today}
                   done={false}
                   whenLabel="Kiedy pasuje"

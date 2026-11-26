@@ -228,5 +228,6 @@ export type Route =
   | { name: "tip"; tipId: string }
   | { name: "shopping" }
   | { name: "profile" }
+  | { name: "household" }
   | { name: "privacy" }
   | { name: "plan" };

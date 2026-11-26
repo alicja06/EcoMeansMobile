@@ -9,8 +9,9 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-
+import { View, Pressable, StyleSheet } from "react-native";
+import { AppText } from "@/components/ui/AppText";
+import { fontFamilies } from "@/theme/typography";
 import type {
   AppState,
   CleaningTask,
@@ -139,11 +140,11 @@ function getErrorMessage(error: unknown): string {
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const { householdId, loading: householdLoading } = useHousehold();
   const { user } = useAuth();
+  const userId = user?.id;
 
   const [state, dispatch] = useReducer(appReducer, undefined, createEmptyState);
 
   const stateRef = useRef(state);
-  stateRef.current = state;
 
   const versionsRef = useRef<HouseholdSyncVersions>({
     household: 0,
@@ -173,14 +174,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   // Pobranie pełnego stanu i wszystkich aktualnych wersji z Supabase.
   const refreshCloudState = useCallback(async () => {
-    if (!householdId || !user?.id) return;
+    if (!householdId || !userId) return;
 
     const requestId = ++loadRequestRef.current;
 
     try {
       const snapshot = await loadHouseholdSnapshot(
         householdId,
-        user.id,
+        userId,
         createEmptyState(),
       );
 
@@ -204,17 +205,16 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       setLoadError(getErrorMessage(error));
       setLoadedHouseholdId(undefined);
     }
-  }, [householdId, user?.id]);
+  }, [householdId, userId]);
 
   // Obsługa pierwszego pobrania danych i zmiany gospodarstwa.
   useEffect(() => {
     if (householdLoading) {
-      setLoadedHouseholdId(undefined);
       return;
     }
 
     if (!householdId) {
-      loadRequestRef.current += 1;
+      const requestId = ++loadRequestRef.current;
 
       versionsRef.current = {
         household: 0,
@@ -230,38 +230,64 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         state: emptyState,
       });
 
+      let active = true;
+
+      void Promise.resolve().then(() => {
+        if (!active || requestId !== loadRequestRef.current) return;
+
+        setLoadError(null);
+        setOperationError(null);
+        setLoadedHouseholdId(null);
+      });
+
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!userId) {
+      const requestId = ++loadRequestRef.current;
+      let active = true;
+
+      void Promise.resolve().then(() => {
+        if (!active || requestId !== loadRequestRef.current) return;
+
+        setLoadError("Nie udało się ustalić zalogowanego użytkownika.");
+        setLoadedHouseholdId(undefined);
+      });
+
+      return () => {
+        active = false;
+      };
+    }
+
+    let active = true;
+
+    void Promise.resolve().then(() => {
+      if (!active) return;
+
+      setLoadedHouseholdId(undefined);
       setLoadError(null);
       setOperationError(null);
-      setLoadedHouseholdId(null);
-      return;
-    }
 
-    if (!user?.id) {
-      loadRequestRef.current += 1;
-
-      setLoadError("Nie udało się ustalić zalogowanego użytkownika.");
-      setLoadedHouseholdId(undefined);
-      return;
-    }
-
-    setLoadedHouseholdId(undefined);
-    setLoadError(null);
-    setOperationError(null);
-
-    void refreshCloudState();
+      void refreshCloudState();
+    });
 
     return () => {
+      active = false;
       loadRequestRef.current += 1;
     };
-  }, [householdId, householdLoading, user?.id, retryCount, refreshCloudState]);
+  }, [householdId, householdLoading, userId, retryCount, refreshCloudState]);
 
-  const stateReady = householdId
-    ? loadedHouseholdId === householdId
-    : loadedHouseholdId === null;
+  const stateReady =
+    !householdLoading &&
+    (householdId
+      ? loadedHouseholdId === householdId
+      : loadedHouseholdId === null);
 
   // Nasłuchiwanie zmian wprowadzonych przez innych domowników.
   useEffect(() => {
-    if (householdLoading || !householdId || !user?.id || !stateReady) {
+    if (householdLoading || !householdId || !userId || !stateReady) {
       return;
     }
 
@@ -285,7 +311,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       if (refreshTimer) clearTimeout(refreshTimer);
       void unsubscribeFromHouseholdChanges(channel);
     };
-  }, [householdId, householdLoading, user?.id, stateReady, refreshCloudState]);
+  }, [householdId, householdLoading, userId, stateReady, refreshCloudState]);
 
   const retryLoading = useCallback(() => {
     setRetryCount((count) => count + 1);
@@ -557,7 +583,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   // Ulubione produkty – dane indywidualne użytkownika.
   const toggleFavorite = useCallback(
     async (productId: string) => {
-      if (!user?.id) return;
+      if (!userId) return;
 
       const current = stateRef.current.favoriteProductIds;
 
@@ -569,7 +595,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from("profiles")
           .update({ favorite_product_ids: next })
-          .eq("id", user.id);
+          .eq("id", userId);
 
         if (error) throw error;
 
@@ -581,13 +607,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         await handleWriteError(error);
       }
     },
-    [user?.id, commitAction, handleWriteError],
+    [userId, commitAction, handleWriteError],
   );
 
   // Zapisane porady – dane indywidualne użytkownika.
   const toggleSavedTip = useCallback(
     async (tipId: string) => {
-      if (!user?.id) return;
+      if (!userId) return;
 
       const current = stateRef.current.savedTipIds;
 
@@ -599,7 +625,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from("profiles")
           .update({ saved_tip_ids: next })
-          .eq("id", user.id);
+          .eq("id", userId);
 
         if (error) throw error;
 
@@ -611,7 +637,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         await handleWriteError(error);
       }
     },
-    [user?.id, commitAction, handleWriteError],
+    [userId, commitAction, handleWriteError],
   );
 
   const addShoppingItem = useCallback(
@@ -740,7 +766,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   // Zmiany profilu są indywidualne, nie współdzielone.
   const updateProfile = useCallback(
     async (patch: Partial<Profile>) => {
-      if (!user?.id) return;
+      if (!userId) return;
 
       const action: AppAction = {
         type: "updateProfile",
@@ -768,7 +794,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase
           .from("profiles")
           .update(update)
-          .eq("id", user.id);
+          .eq("id", userId);
 
         if (error) throw error;
 
@@ -778,7 +804,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         await handleWriteError(error);
       }
     },
-    [user?.id, handleWriteError],
+    [userId, handleWriteError],
   );
 
   // Ustawienia gospodarstwa są wspólne dla domowników.
@@ -918,17 +944,16 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     ],
   );
 
- 
   if (householdLoading || !stateReady) {
     return (
       <View style={styles.loadingContainer}>
         {loadError ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorTitle}>
+            <AppText style={styles.errorTitle}>
               Nie udało się załadować danych
-            </Text>
+            </AppText>
 
-            <Text style={styles.errorMessage}>{loadError}</Text>
+            <AppText style={styles.errorMessage}>{loadError}</AppText>
 
             <Pressable
               onPress={retryLoading}
@@ -937,15 +962,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
                 pressed && styles.buttonPressed,
               ]}
             >
-              <Text style={styles.retryButtonText}>
-                Spróbuj ponownie
-              </Text>
+              <AppText style={styles.retryButtonText}>Spróbuj ponownie</AppText>
             </Pressable>
           </View>
         ) : (
-          <Text style={styles.loadingText}>
-            Ładowanie EcoMeans...
-          </Text>
+          <AppText style={styles.loadingText}>Ładowanie EcoMeans...</AppText>
         )}
       </View>
     );
@@ -955,15 +976,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     <AppStoreContext.Provider value={store}>
       {operationError && (
         <View style={styles.errorBanner}>
-          <Text style={styles.errorBannerText}>
-            {operationError}
-          </Text>
+          <AppText style={styles.errorBannerText}>{operationError}</AppText>
 
-          <Pressable
-            onPress={dismissOperationError}
-            hitSlop={10}
-          >
-            <Text style={styles.dismissText}>Zamknij</Text>
+          <Pressable onPress={dismissOperationError} hitSlop={10}>
+            <AppText style={styles.dismissText}>Zamknij</AppText>
           </Pressable>
         </View>
       )}
@@ -972,7 +988,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     </AppStoreContext.Provider>
   );
 }
-
 
 export function useAppStore(): AppStore {
   const store = useContext(AppStoreContext);
@@ -983,7 +998,6 @@ export function useAppStore(): AppStore {
 
   return store;
 }
-
 
 const styles = StyleSheet.create({
   loadingContainer: {
@@ -1003,13 +1017,14 @@ const styles = StyleSheet.create({
     color: "#3b742f",
     textAlign: "center",
     marginBottom: 12,
-    fontWeight: "600",
+    fontFamily: fontFamilies.bold,
   },
   errorMessage: {
     fontSize: 14,
     color: "#4e4d4d",
     textAlign: "center",
     marginBottom: 24,
+    fontFamily: fontFamilies.regular,
   },
   retryButton: {
     width: "100%",
@@ -1021,7 +1036,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: "#ffffff",
-    fontWeight: "700",
+    fontFamily: fontFamilies.bold,
     fontSize: 16,
   },
   buttonPressed: {
@@ -1030,6 +1045,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 18,
     color: "#3b742f",
+    fontFamily: fontFamilies.medium,
   },
   errorBanner: {
     position: "absolute",
@@ -1052,10 +1068,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: "#4e4d4d",
+    fontFamily: fontFamilies.regular,
   },
   dismissText: {
     color: "#3b742f",
-    fontWeight: "700",
+    fontFamily: fontFamilies.bold,
   },
 });
-

@@ -8,10 +8,10 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from 'react-native';
 import { AppText } from '@/components/ui/AppText';
+import { AppTextInput } from '@/components/ui/AppTextInput';
 import { supabase } from '@/lib/supabase';
 
 interface HouseholdChoiceScreenProps {
@@ -58,13 +58,21 @@ export function HouseholdChoiceScreen({
 
   async function handleJoin() {
     setError('');
+
+    const code = invitationToken.trim();
+
+    if (!code) {
+      setError('Wpisz kod zaproszenia.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const { data, error } = await supabase.rpc(
-        'accept_household_invitation',
+        'accept_household_invite_code',
         {
-          invitation_token: invitationToken.trim(),
+          p_code: code,
         },
       );
 
@@ -78,10 +86,9 @@ export function HouseholdChoiceScreen({
 
       onHouseholdJoined(data);
     } catch (err) {
+      console.error('Nie udało się dołączyć do gospodarstwa:', err);
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Nie udało się dołączyć do gospodarstwa.',
+        'Kod jest nieprawidłowy, wykorzystany lub wygasł. Poproś o nowe zaproszenie.',
       );
     } finally {
       setLoading(false);
@@ -184,7 +191,7 @@ export function HouseholdChoiceScreen({
                     Nazwa gospodarstwa
                   </AppText>
 
-                  <TextInput
+                  <AppTextInput
                     value={householdName}
                     onChangeText={setHouseholdName}
                     maxLength={80}
@@ -239,7 +246,7 @@ export function HouseholdChoiceScreen({
                     Kod zaproszenia
                   </AppText>
 
-                  <TextInput
+                  <AppTextInput
                     value={invitationToken}
                     onChangeText={setInvitationToken}
                     autoCapitalize="none"

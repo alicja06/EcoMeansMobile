@@ -17,6 +17,7 @@ interface TaskRowProps {
   onToggle?: () => void;
   trailing?: ReactNode;
   whenLabel?: string;
+  assignedToLabel?: string | null;
 }
 
 export function TaskRow({
@@ -26,6 +27,7 @@ export function TaskRow({
   onToggle,
   trailing,
   whenLabel,
+  assignedToLabel,
 }: TaskRowProps) {
   const room = findRoom(task.roomId);
   const when = whenLabel ?? dueLabel(task.dueDate, today);
@@ -87,6 +89,12 @@ export function TaskRow({
         >
           {details}
         </AppText>
+
+        {assignedToLabel ? (
+          <AppText numberOfLines={1} style={styles.assignment}>
+            Dla: {assignedToLabel}
+          </AppText>
+        ) : null}
       </View>
 
       {trailing ? (
@@ -151,6 +159,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: '#88847e',
     fontSize: 12,
+  },
+  assignment: {
+    marginTop: 3,
+    color: '#3b742f',
+    fontSize: 11,
   },
   trailing: {
     flexShrink: 0,

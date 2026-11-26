@@ -1,34 +1,43 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  TextInput,
   View,
 } from "react-native";
 import { Redirect, useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { AppText } from "@/components/ui/AppText";
+import { AppTextInput } from "@/components/ui/AppTextInput";
+import { useAuth } from "@/auth/AuthContext";
+import { useHousehold } from "@/auth/HouseholdContext";
 
 export default function AuthCallbackScreen() {
   const params = useLocalSearchParams<{
     code?: string;
+    invite?: string;
     type?: string;
     error?: string;
     error_description?: string;
   }>();
 
-  console.log("[AUTH CALLBACK ROUTE]", params);
+  const { user } = useAuth();
+  const { refreshHousehold } = useHousehold();
 
   const [status, setStatus] = useState<
-    "loading" | "success" | "recovery" | "error"
+    "loading" | "success" | "recovery" | "invite" | "error"
   >("loading");
 
   const [errorMessage, setErrorMessage] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(
+    null,
+  );
+  const [continueToApp, setContinueToApp] = useState(false);
+  const handledInviteCode = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -57,6 +66,11 @@ export default function AuthCallbackScreen() {
           );
         }
 
+        if (params.invite) {
+          if (active) setPendingInviteCode(params.invite);
+          return;
+        }
+
         if (active) {
           setStatus(
             params.type === "recovery" ? "recovery" : "success",
@@ -79,7 +93,56 @@ export default function AuthCallbackScreen() {
     return () => {
       active = false;
     };
-  }, [params.code, params.type, params.error, params.error_description]);
+  }, [
+    params.code,
+    params.invite,
+    params.type,
+    params.error,
+    params.error_description,
+  ]);
+
+  useEffect(() => {
+    if (
+      !pendingInviteCode ||
+      !user ||
+      handledInviteCode.current === pendingInviteCode
+    ) {
+      return;
+    }
+
+    handledInviteCode.current = pendingInviteCode;
+    let active = true;
+
+    async function acceptHouseholdInvitation() {
+      try {
+        const { error } = await supabase.rpc(
+          "accept_household_invite_code",
+          { p_code: pendingInviteCode },
+        );
+
+        if (error) throw error;
+
+        await refreshHousehold();
+
+        if (active) {
+          setStatus(params.type === "invite" ? "invite" : "success");
+        }
+      } catch {
+        if (active) {
+          setErrorMessage(
+            "Nie udało się dołączyć do gospodarstwa. Otwórz aplikację i poproś właściciela o nowy kod.",
+          );
+          setStatus("error");
+        }
+      }
+    }
+
+    void acceptHouseholdInvitation();
+
+    return () => {
+      active = false;
+    };
+  }, [params.type, pendingInviteCode, refreshHousehold, user]);
 
   async function handlePasswordUpdate() {
     setErrorMessage("");
@@ -115,22 +178,26 @@ export default function AuthCallbackScreen() {
     }
   }
 
-  if (status === "success") {
+  if (status === "success" || continueToApp) {
     return <Redirect href="/" />;
   }
 
-  if (status === "recovery") {
+  if (status === "recovery" || status === "invite") {
+    const isInvitation = status === "invite";
+
     return (
       <View style={styles.container}>
         <AppText style={styles.heading}>
-          Ustaw nowe hasło
+          {isInvitation ? "Ustaw hasło do konta" : "Ustaw nowe hasło"}
         </AppText>
 
         <AppText style={styles.subtitle}>
-          Wybierz nowe hasło do swojego konta EcoMeans.
+          {isInvitation
+            ? "Utwórz hasło, aby móc logować się do EcoMeans."
+            : "Wybierz nowe hasło do swojego konta EcoMeans."}
         </AppText>
 
-        <TextInput
+        <AppTextInput
           value={password}
           onChangeText={setPassword}
           placeholder="Nowe hasło"
@@ -140,7 +207,7 @@ export default function AuthCallbackScreen() {
           style={styles.input}
         />
 
-        <TextInput
+        <AppTextInput
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           placeholder="Powtórz nowe hasło"
@@ -160,7 +227,11 @@ export default function AuthCallbackScreen() {
           style={[styles.button, saving && styles.disabled]}
         >
           <AppText style={styles.buttonText}>
-            {saving ? "Zapisywanie..." : "Zapisz nowe hasło"}
+            {saving
+              ? "Zapisywanie..."
+              : isInvitation
+                ? "Ustaw hasło"
+                : "Zapisz nowe hasło"}
           </AppText>
         </Pressable>
       </View>
@@ -171,6 +242,12 @@ export default function AuthCallbackScreen() {
     return (
       <View style={styles.container}>
         <AppText style={styles.error}>{errorMessage}</AppText>
+        <Pressable
+          onPress={() => setContinueToApp(true)}
+          style={styles.button}
+        >
+          <AppText style={styles.buttonText}>Przejdź do aplikacji</AppText>
+        </Pressable>
       </View>
     );
   }
