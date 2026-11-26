@@ -5,6 +5,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, Crown, Share2, Users } from 'lucide-react-native';
 
 import { AppText } from '@/components/ui/AppText';
@@ -29,6 +30,7 @@ const COLORS = {
 };
 
 export function HouseholdMembersScreen() {
+  const insets = useSafeAreaInsets();
   const { householdId } = useHousehold();
   const {
     members,
@@ -157,7 +159,12 @@ export function HouseholdMembersScreen() {
     <>
       <ScreenHeader title="Domownicy" onBack={goBack} />
 
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          { paddingBottom: 28 + insets.bottom },
+        ]}
+      >
         <View style={styles.introCard}>
           <Users size={22} color={COLORS.green} />
           <AppText style={styles.introText}>
